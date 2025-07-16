@@ -39,6 +39,8 @@ export default function Dashboard() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [processingKnowledge, setProcessingKnowledge] = useState<string | null>(null);
   const [newAgent, setNewAgent] = useState({
     name: '',
     description: '',
@@ -102,6 +104,35 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error creating agent:', error);
       alert('Error creating agent');
+    }
+  };
+
+  const processKnowledgeSource = async (knowledgeSourceId: string) => {
+    setProcessingKnowledge(knowledgeSourceId);
+    try {
+      const response = await fetch(`/api/knowledge-sources/${knowledgeSourceId}/process`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          maxPages: 10,
+          maxDepth: 2,
+          generateEmbeddings: true
+        }),
+      });
+
+      if (response.ok) {
+        alert('Knowledge processing started!');
+      } else {
+        const error = await response.json();
+        alert(`Failed to start processing: ${error.error}`);
+      }
+    } catch (error) {
+      console.error('Error processing knowledge source:', error);
+      alert('Error starting knowledge processing');
+    } finally {
+      setProcessingKnowledge(null);
     }
   };
 
@@ -257,6 +288,44 @@ export default function Dashboard() {
                         Test Chat →
                       </Link>
                     </div>
+                    
+                    {/* Knowledge Sources */}
+                    {agent.knowledgeSources.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <h4 className="text-sm font-medium text-gray-900 mb-2">Knowledge Sources</h4>
+                        <div className="space-y-2">
+                          {agent.knowledgeSources.map((source: KnowledgeSource) => (
+                            <div key={source.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-sm font-medium">{source.name}</span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                    source.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    source.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                    source.status === 'failed' ? 'bg-red-100 text-red-800' :
+                                    'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {source.status}
+                                  </span>
+                                </div>
+                                {source.url && (
+                                  <div className="text-xs text-gray-500 truncate">{source.url}</div>
+                                )}
+                              </div>
+                              {source.url && source.status !== 'processing' && (
+                                <button
+                                  onClick={() => processKnowledgeSource(source.id)}
+                                  disabled={processingKnowledge === source.id}
+                                  className="ml-2 px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  {processingKnowledge === source.id ? 'Processing...' : 'Process'}
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
