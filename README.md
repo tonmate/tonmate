@@ -10,6 +10,8 @@ A modern, AI-powered customer support agent for Instagram shops built with Next.
 - **24/7 Availability**: Round-the-clock automated customer support
 - **Instagram Integration**: Ready for Instagram Business API webhook integration
 - **Modern UI**: Beautiful, responsive web interface built with Tailwind CSS
+- **User Authentication**: Secure signup/login with NextAuth.js
+- **Database Storage**: Persistent data storage with Prisma ORM
 - **Demo Mode**: Works without OpenAI API key for testing and demonstration
 
 ## 🛠️ Tech Stack
@@ -17,6 +19,8 @@ A modern, AI-powered customer support agent for Instagram shops built with Next.
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes
 - **AI**: LangChain.js, OpenAI GPT
+- **Database**: Prisma ORM with PostgreSQL (production) / SQLite (development)
+- **Authentication**: NextAuth.js with Credentials provider
 - **Deployment**: Vercel-ready configuration
 
 ## 📦 Installation
@@ -34,12 +38,26 @@ A modern, AI-powered customer support agent for Instagram shops built with Next.
 
 3. **Configure environment variables**
    ```bash
-   cp .env.example .env.local
+   cp environment.example .env.local
    ```
    
    Edit `.env.local` with your configuration:
    ```env
+   # NextAuth Configuration
+   NEXTAUTH_SECRET=your_secret_here_minimum_32_characters_long
+   NEXTAUTH_URL=http://localhost:3000
+   
+   # Database Configuration  
+   # For development (SQLite):
+   DATABASE_URL="file:./prisma/dev.db"
+   # For production (PostgreSQL):
+   # POSTGRES_URL="your_postgres_connection_string_here"
+   # POSTGRES_URL_NON_POOLING="your_postgres_non_pooling_connection_string_here"
+   
+   # OpenAI Configuration
    OPENAI_API_KEY=your_openai_api_key_here
+   
+   # Shop Configuration
    SHOP_NAME=Your Shop Name
    SHOP_DESCRIPTION=Brief description of your shop
    SHOP_POLICIES=Return and refund policies
@@ -127,8 +145,19 @@ For Instagram webhook integration:
    vercel
    ```
 
-2. **Set environment variables** in Vercel dashboard
-3. **Deploy**: Automatic deployment on git push
+2. **Set up Database**
+   - Go to Vercel Dashboard > Your Project > Storage
+   - Click "Create Database" > "Postgres"
+   - Choose a name and region
+   - Vercel will automatically set up `POSTGRES_URL` and `POSTGRES_URL_NON_POOLING` variables
+
+3. **Set environment variables** in Vercel dashboard
+   - `NEXTAUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `NEXTAUTH_URL`: Your production URL (e.g., `https://your-app.vercel.app`)
+   - All other environment variables from your local `.env.local`
+
+4. **Deploy**: Automatic deployment on git push
+   - The `postinstall` and `build` scripts will handle Prisma setup automatically
 
 ### Other Platforms
 
