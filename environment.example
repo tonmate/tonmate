@@ -1,0 +1,9 @@
+# NextAuth Configuration
+NEXTAUTH_SECRET=your_secret_here_minimum_32_characters_long
+NEXTAUTH_URL=http://localhost:3000
+
+# Database Configuration  
+DATABASE_URL="file:./dev.db"
+
+# OpenAI Configuration (if using)
+OPENAI_API_KEY=your_openai_api_key_here
