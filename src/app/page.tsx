@@ -11,7 +11,7 @@ export default function Home() {
               <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-sm">AI</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">InstagramAI</span>
+              <span className="text-2xl font-bold text-gray-900">SupportAI</span>
             </div>
             <nav className="hidden md:flex space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
@@ -30,12 +30,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              AI Customer Support for
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Instagram Shops</span>
+              Create Custom AI
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600"> Support Agents</span>
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Automate your Instagram customer support with intelligent AI that handles product inquiries, 
-              order tracking, and customer service 24/7. Built with LangChain.js and OpenAI.
+              Build AI-powered customer support agents trained on your website content. Deploy across multiple channels 
+              with custom rules, escalation logic, and brand personality. Open source and SaaS ready.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/auth/signup" className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
@@ -55,10 +55,10 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Powerful Features for Instagram Commerce
+              Universal AI Agent Platform
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Everything you need to provide exceptional customer support on Instagram
+              Everything you need to build and deploy custom AI support agents for any business
             </p>
           </div>
           
@@ -67,9 +67,9 @@ export default function Home() {
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">💬</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Smart Product Search</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Website Knowledge Base</h3>
               <p className="text-gray-600">
-                AI understands natural language queries to help customers find exactly what they&apos;re looking for
+                Automatically crawl and learn from your website content to provide accurate, contextual responses
               </p>
             </div>
             
@@ -77,9 +77,9 @@ export default function Home() {
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl">📦</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Order Tracking</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Custom Agent Rules</h3>
               <p className="text-gray-600">
-                Instant order status updates and tracking information for customer inquiries
+                Configure escalation logic, greeting messages, personality, and custom actions for your agents
               </p>
             </div>
             

@@ -1,18 +1,20 @@
-# Instagram Customer Support Agent - Next.js
+# Customer Support AI Agent Platform
 
-A modern, AI-powered customer support agent for Instagram shops built with Next.js, LangChain.js, and OpenAI. This application provides automated customer support through intelligent conversation handling, product search, order tracking, and store information assistance.
+A universal, AI-powered customer support agent creation platform built with Next.js, LangChain.js, and OpenAI. This open-source and SaaS solution allows businesses to build their own LLM-based support agents tailored to their specific needs and trained on their website content.
 
 ## 🚀 Features
 
-- **Smart Product Search**: AI understands natural language queries to help customers find products
-- **Order Tracking**: Instant order status updates and tracking information
-- **Store Information**: Automated responses for policies, shipping, and contact information
+- **Universal Agent Creation**: Build custom AI support agents for any business or use case
+- **Website Knowledge Base**: Automatically crawl and learn from your website content
+- **Multi-Channel Support**: Deploy agents across different communication channels
+- **Custom Rules & Logic**: Configure escalation logic, greeting messages, and agent personality
+- **LLM Provider Choice**: Support for OpenAI, Anthropic, and other providers
 - **24/7 Availability**: Round-the-clock automated customer support
-- **Instagram Integration**: Ready for Instagram Business API webhook integration
-- **Modern UI**: Beautiful, responsive web interface built with Tailwind CSS
-- **User Authentication**: Secure signup/login with NextAuth.js
+- **Modern Dashboard**: Rich interface for agent management and analytics
+- **User Authentication**: Secure multi-tenant architecture with NextAuth.js
 - **Database Storage**: Persistent data storage with Prisma ORM
-- **Demo Mode**: Works without OpenAI API key for testing and demonstration
+- **Demo Mode**: Explore the platform without API keys
+- **Open Source**: Self-hostable with full source code access
 
 ## 🛠️ Tech Stack
 
@@ -28,7 +30,7 @@ A modern, AI-powered customer support agent for Instagram shops built with Next.
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd instagram-support-agent-nextjs
+   cd customer-support-ai-agent
    ```
 
 2. **Install dependencies**

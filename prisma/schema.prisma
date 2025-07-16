@@ -7,9 +7,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_URL")
-  directUrl = env("POSTGRES_URL_NON_POOLING")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
 model Account {
@@ -51,13 +50,9 @@ model User {
   
   // User configuration
   openaiApiKey  String?   // Encrypted
-  shopUrl       String?
-  shopName      String?
-  shopDescription String?
   
-  // User's products and orders
-  products      Product[]
-  orders        Order[]
+  // User's agents
+  agents        Agent[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -71,40 +66,70 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  price       Float?
-  category    String?
-  size        String?
-  color       String?
-  inStock     Boolean  @default(true)
-  imageUrl    String?
-  url         String?
+model Agent {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  prompt          String   @default("You are a helpful customer support agent.")
+  greeting        String   @default("Hello! How can I help you today?")
+  temperature     Float    @default(0.7)
+  llmProvider     String   @default("openai")
+  isActive        Boolean  @default(true)
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  knowledgeSources KnowledgeSource[]
+  conversations   Conversation[]
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-model Order {
-  id          String   @id @default(cuid())
-  userId      String
-  orderId     String   // External order ID
-  customerName String?
-  customerEmail String?
-  status      String   @default("pending")
-  total       Float?
-  items       String?  // JSON string of order items
-  trackingNumber String?
+model KnowledgeSource {
+  id              String   @id @default(cuid())
+  agentId         String
+  type            String   // "website", "document", "faq", "manual"
+  name            String
+  url             String?  // For website crawling
+  content         String?  // Raw content for documents
+  metadata        Json?    // Additional structured data
+  status          String   @default("pending") // "pending", "processing", "completed", "failed"
   
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Relations
+  agent           Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  documents       Document[]
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  sourceId        String
+  title           String
+  content         String
+  url             String?  // Original URL if from web crawling
+  wordCount       Int?
+  embedding       Json?    // Vector embeddings for semantic search
   
-  @@unique([userId, orderId])
+  // Relations
+  source          KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Conversation {
+  id              String   @id @default(cuid())
+  agentId         String
+  sessionId       String   @unique
+  messages        Json     // Array of message history
+  metadata        Json?    // Channel info, user info, etc.
+  
+  // Relations
+  agent           Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

@@ -4,50 +4,49 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { PlusIcon, CogIcon, ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon } from '@heroicons/react/24/outline';
 
-interface UserConfig {
-  openaiApiKey?: string;
-  shopUrl?: string;
-  shopName?: string;
-  shopDescription?: string;
-}
-
-interface Product {
+interface Agent {
   id: string;
   name: string;
   description?: string;
-  price?: number;
-  category?: string;
-  inStock: boolean;
+  prompt?: string;
+  greeting?: string;
+  temperature: number;
+  llmProvider: string;
+  isActive: boolean;
+  createdAt: string;
+  knowledgeSources: KnowledgeSource[];
+  _count: {
+    conversations: number;
+  };
 }
 
-interface Order {
+interface KnowledgeSource {
   id: string;
-  orderId: string;
-  customerName?: string;
+  name: string;
+  type: string;
+  url?: string;
   status: string;
-  total?: number;
-  createdAt: string;
+  _count?: {
+    documents: number;
+  };
 }
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [config, setConfig] = useState<UserConfig>({});
-  const [products, setProducts] = useState<Product[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [crawling, setCrawling] = useState(false);
-  const [testMessage, setTestMessage] = useState('');
-  const [testResponse, setTestResponse] = useState('');
-  const [testLoading, setTestLoading] = useState(false);
-
-  // Form states
-  const [apiKey, setApiKey] = useState('');
-  const [shopUrl, setShopUrl] = useState('');
-  const [shopName, setShopName] = useState('');
-  const [shopDescription, setShopDescription] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newAgent, setNewAgent] = useState({
+    name: '',
+    description: '',
+    prompt: 'You are a helpful customer support agent.',
+    greeting: 'Hello! How can I help you today?',
+    temperature: 0.7,
+    llmProvider: 'openai'
+  });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -57,169 +56,106 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (session?.user?.id) {
-      fetchUserData();
+      fetchAgents();
     }
   }, [session]);
 
-  const fetchUserData = async () => {
+  const fetchAgents = async () => {
     try {
-      const response = await fetch('/api/user/config');
+      const response = await fetch('/api/agents');
       if (response.ok) {
         const data = await response.json();
-        setConfig(data.config);
-        setProducts(data.products || []);
-        setOrders(data.orders || []);
-        
-        // Set form values
-        setApiKey(data.config.openaiApiKey || '');
-        setShopUrl(data.config.shopUrl || '');
-        setShopName(data.config.shopName || '');
-        setShopDescription(data.config.shopDescription || '');
+        setAgents(data);
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+      console.error('Error fetching agents:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-
+  const createAgent = async () => {
     try {
-      const response = await fetch('/api/user/config', {
+      const response = await fetch('/api/agents', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          openaiApiKey: apiKey,
-          shopUrl,
-          shopName,
-          shopDescription,
-        }),
+        body: JSON.stringify(newAgent),
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setConfig(data.config);
-        alert('Configuration saved successfully!');
+        const agent = await response.json();
+        setAgents([agent, ...agents]);
+        setShowCreateModal(false);
+        setNewAgent({
+          name: '',
+          description: '',
+          prompt: 'You are a helpful customer support agent.',
+          greeting: 'Hello! How can I help you today?',
+          temperature: 0.7,
+          llmProvider: 'openai'
+        });
       } else {
-        alert('Error saving configuration');
+        alert('Failed to create agent');
       }
     } catch (error) {
-      console.error('Error saving config:', error);
-      alert('Error saving configuration');
-    } finally {
-      setSaving(false);
+      console.error('Error creating agent:', error);
+      alert('Error creating agent');
     }
   };
 
-  const handleCrawlStore = async () => {
-    if (!shopUrl) {
-      alert('Please enter a shop URL first');
+  const deleteAgent = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this agent?')) {
       return;
     }
 
-    setCrawling(true);
     try {
-      const response = await fetch('/api/crawl', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ shopUrl }),
+      const response = await fetch(`/api/agents/${id}`, {
+        method: 'DELETE',
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-        setOrders(data.orders || []);
-        alert(`Crawling completed! Found ${data.products?.length || 0} products and ${data.orders?.length || 0} orders.`);
+        setAgents(agents.filter(agent => agent.id !== id));
       } else {
-        alert('Error crawling store');
+        alert('Failed to delete agent');
       }
     } catch (error) {
-      console.error('Error crawling store:', error);
-      alert('Error crawling store');
-    } finally {
-      setCrawling(false);
-    }
-  };
-
-  const handleTestAgent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!testMessage.trim()) return;
-
-    setTestLoading(true);
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: testMessage,
-          userId: session?.user?.id,
-          useUserConfig: true,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTestResponse(data.response);
-      } else {
-        setTestResponse('Error: Could not get response from agent');
-      }
-    } catch (error) {
-      console.error('Error testing agent:', error);
-      setTestResponse('Error: Could not connect to agent');
-    } finally {
-      setTestLoading(false);
+      console.error('Error deleting agent:', error);
+      alert('Error deleting agent');
     }
   };
 
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (!session) {
-    return null;
+  if (status === 'unauthenticated') {
+    return null; // Will redirect
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
+      <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-4">
-              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">AI</span>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-                <p className="text-sm text-gray-600">Welcome back, {session.user?.name}</p>
-              </div>
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Link href="/" className="text-xl font-bold text-gray-900">
+                Customer Support AI
+              </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/chat"
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Test Chat
-              </Link>
+              <span className="text-sm text-gray-600">
+                Welcome, {session?.user?.email}
+              </span>
               <button
                 onClick={() => signOut()}
-                className="text-gray-600 hover:text-gray-900 transition-colors"
+                className="text-sm text-gray-600 hover:text-gray-900"
               >
                 Sign Out
               </button>
@@ -228,198 +164,168 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Configuration Section */}
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Configuration</h2>
-              <form onSubmit={handleSaveConfig} className="space-y-4">
-                <div>
-                  <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700">
-                    OpenAI API Key
-                  </label>
-                  <input
-                    type="password"
-                    id="apiKey"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="sk-..."
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Your API key is encrypted and stored securely
-                  </p>
-                </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">AI Agents</h1>
+            <p className="text-gray-600">Create and manage your customer support AI agents</p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            New Agent
+          </button>
+        </div>
 
-                <div>
-                  <label htmlFor="shopUrl" className="block text-sm font-medium text-gray-700">
-                    Shop URL
-                  </label>
-                  <input
-                    type="url"
-                    id="shopUrl"
-                    value={shopUrl}
-                    onChange={(e) => setShopUrl(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="https://yourshop.com"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="shopName" className="block text-sm font-medium text-gray-700">
-                    Shop Name
-                  </label>
-                  <input
-                    type="text"
-                    id="shopName"
-                    value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Your Shop Name"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="shopDescription" className="block text-sm font-medium text-gray-700">
-                    Shop Description
-                  </label>
-                  <textarea
-                    id="shopDescription"
-                    value={shopDescription}
-                    onChange={(e) => setShopDescription(e.target.value)}
-                    rows={3}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Brief description of your shop"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Save Configuration'}
-                </button>
-              </form>
-            </div>
-
-            {/* Crawl Store Section */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Store Data</h2>
-              <p className="text-gray-600 mb-4">
-                Crawl your store to automatically fetch product and order information.
-              </p>
+        {/* Agents Grid */}
+        {agents.length === 0 ? (
+          <div className="text-center py-12">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No agents</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Get started by creating your first AI agent.
+            </p>
+            <div className="mt-6">
               <button
-                onClick={handleCrawlStore}
-                disabled={crawling || !shopUrl}
-                className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                {crawling ? 'Crawling...' : 'Crawl Store Data'}
+                <PlusIcon className="h-4 w-4 mr-2" />
+                New Agent
               </button>
             </div>
           </div>
-
-          {/* Data Preview Section */}
-          <div className="space-y-6">
-            {/* Products Preview */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Products ({products.length})
-              </h2>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {products.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    No products found. Try crawling your store first.
-                  </p>
-                ) : (
-                  products.slice(0, 5).map((product) => (
-                    <div key={product.id} className="border border-gray-200 rounded p-3">
-                      <h3 className="font-medium text-gray-900">{product.name}</h3>
-                      <p className="text-sm text-gray-600">{product.description}</p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-sm font-medium text-green-600">
-                          ${product.price?.toFixed(2) || 'N/A'}
-                        </span>
-                        <span className={`text-xs px-2 py-1 rounded ${
-                          product.inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {product.inStock ? 'In Stock' : 'Out of Stock'}
-                        </span>
-                      </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {agents.map((agent) => (
+              <div key={agent.id} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 truncate">
+                      {agent.name}
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <Link 
+                        href={`/dashboard/agents/${agent.id}`}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        <CogIcon className="h-5 w-5" />
+                      </Link>
+                      <button
+                        onClick={() => deleteAgent(agent.id)}
+                        className="text-gray-400 hover:text-red-600"
+                      >
+                        <TrashIcon className="h-5 w-5" />
+                      </button>
                     </div>
-                  ))
-                )}
+                  </div>
+                  
+                  {agent.description && (
+                    <p className="text-sm text-gray-600 mb-4">
+                      {agent.description}
+                    </p>
+                  )}
+                  
+                  <div className="flex items-center justify-between text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
+                      <span>{agent._count.conversations} conversations</span>
+                    </div>
+                    <div className="flex items-center">
+                      <DocumentTextIcon className="h-4 w-4 mr-1" />
+                      <span>{agent.knowledgeSources.length} sources</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        agent.isActive 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {agent.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                      <Link
+                        href={`/chat?agent=${agent.id}`}
+                        className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                      >
+                        Test Chat →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
+          </div>
+        )}
+      </main>
 
-            {/* Orders Preview */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Orders ({orders.length})
-              </h2>
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {orders.length === 0 ? (
-                  <p className="text-gray-500 text-center py-4">
-                    No orders found. Try crawling your store first.
-                  </p>
-                ) : (
-                  orders.slice(0, 5).map((order) => (
-                    <div key={order.id} className="border border-gray-200 rounded p-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-gray-900">#{order.orderId}</h3>
-                          <p className="text-sm text-gray-600">{order.customerName}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-medium text-green-600">
-                            ${order.total?.toFixed(2) || 'N/A'}
-                          </span>
-                          <p className="text-xs text-gray-500 capitalize">{order.status}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+      {/* Create Agent Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Agent</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <input
+                    type="text"
+                    value={newAgent.name}
+                    onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Customer Support Bot"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    value={newAgent.description}
+                    onChange={(e) => setNewAgent({...newAgent, description: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    rows={3}
+                    placeholder="Brief description of what this agent does..."
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Greeting Message</label>
+                  <input
+                    type="text"
+                    value={newAgent.greeting}
+                    onChange={(e) => setNewAgent({...newAgent, greeting: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Hello! How can I help you today?"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createAgent}
+                  disabled={!newAgent.name.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md"
+                >
+                  Create Agent
+                </button>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Test Agent Section */}
-        <div className="mt-8 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Test Your AI Agent</h2>
-          <form onSubmit={handleTestAgent} className="space-y-4">
-            <div>
-              <label htmlFor="testMessage" className="block text-sm font-medium text-gray-700">
-                Test Message
-              </label>
-              <input
-                type="text"
-                id="testMessage"
-                value={testMessage}
-                onChange={(e) => setTestMessage(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Ask about products, orders, or store policies..."
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={testLoading || !testMessage.trim()}
-              className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50"
-            >
-              {testLoading ? 'Testing...' : 'Test Agent'}
-            </button>
-          </form>
-
-          {testResponse && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-md">
-              <h3 className="font-medium text-gray-900 mb-2">Agent Response:</h3>
-              <p className="text-gray-700 whitespace-pre-wrap">{testResponse}</p>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 }

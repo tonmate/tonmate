@@ -3,53 +3,95 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth';
 import { prisma } from '../../../lib/db';
 import { decrypt } from '../../../lib/encryption';
-import { CustomerSupportAgent } from '../../../../lib/agents/CustomerSupportAgent.js';
+import { UniversalSupportAgent } from '../../../../lib/agents/UniversalSupportAgent.js';
 
 // Cache for agents per user
-const userAgents = new Map<string, CustomerSupportAgent>();
+const userAgents = new Map<string, UniversalSupportAgent>();
 
-async function getUserAgent(userId: string, useUserConfig: boolean = false) {
-  let agent = userAgents.get(userId);
+async function getUserAgent(userId: string, agentId?: string) {
+  const agentKey = agentId ? `${userId}_${agentId}` : userId;
+  let agent = userAgents.get(agentKey);
   
   if (!agent) {
-    agent = new CustomerSupportAgent();
-    
-    if (useUserConfig) {
-      // Get user configuration
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          products: true,
-          orders: true
-        }
-      });
-
-      if (user) {
-        // Use user's OpenAI API key if available
-        if (user.openaiApiKey) {
-          try {
-            const decryptedKey = decrypt(user.openaiApiKey);
-            process.env.OPENAI_API_KEY = decryptedKey;
-          } catch (error) {
-            console.error('Error decrypting user API key:', error);
+    // Get user and agent configuration
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        agents: {
+          include: {
+            knowledgeSources: {
+              include: {
+                documents: true
+              }
+            }
           }
         }
+      }
+    });
 
-        // Set user's shop information
-        if (user.shopName) process.env.SHOP_NAME = user.shopName;
-        if (user.shopDescription) process.env.SHOP_DESCRIPTION = user.shopDescription;
-        if (user.shopUrl) process.env.SHOP_URL = user.shopUrl;
+    if (!user) {
+      throw new Error('User not found');
+    }
 
-        // Initialize agent with user's data
-        await agent.initialize(user.products, user.orders);
-      } else {
-        await agent.initialize();
+    // Find the specific agent or use the first one, or create a default
+    let agentConfig;
+    if (agentId) {
+      agentConfig = user.agents.find(a => a.id === agentId);
+      if (!agentConfig) {
+        throw new Error('Agent not found');
       }
     } else {
-      await agent.initialize();
+      agentConfig = user.agents[0]; // Use first agent if no specific agent requested
     }
+
+    // Create default config if no agents exist
+    if (!agentConfig) {
+      agentConfig = {
+        id: 'demo',
+        name: 'Demo Support Agent',
+        description: 'Demo customer support agent',
+        prompt: 'You are a helpful customer support agent.',
+        greeting: 'Hello! How can I help you today?',
+        temperature: 0.7,
+        llmProvider: 'openai',
+        knowledgeSources: []
+      };
+    }
+
+    // Initialize the universal agent
+    agent = new UniversalSupportAgent({
+      name: agentConfig.name,
+      description: agentConfig.description,
+      prompt: agentConfig.prompt,
+      greeting: agentConfig.greeting,
+      temperature: agentConfig.temperature,
+      llmProvider: agentConfig.llmProvider
+    });
+
+    // Use user's OpenAI API key if available
+    if (user.openaiApiKey) {
+      try {
+        const decryptedKey = decrypt(user.openaiApiKey);
+        process.env.OPENAI_API_KEY = decryptedKey;
+      } catch (error) {
+        console.error('Error decrypting user API key:', error);
+      }
+    }
+
+    // Prepare knowledge base from documents
+    const knowledgeBase = agentConfig.knowledgeSources?.flatMap(source => 
+      source.documents?.map(doc => ({
+        title: doc.title,
+        content: doc.content,
+        url: doc.url,
+        sourceType: source.type
+      })) || []
+    ) || [];
+
+    // Initialize agent with knowledge base (sessionId is different from agentId)
+    await agent.initialize(knowledgeBase, [], null);
     
-    userAgents.set(userId, agent);
+    userAgents.set(agentKey, agent);
   }
   
   return agent;
@@ -58,7 +100,7 @@ async function getUserAgent(userId: string, useUserConfig: boolean = false) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, userId, useUserConfig = false } = body;
+    const { message, userId, agentId, chatHistory = [] } = body;
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -75,17 +117,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // If using user config, verify authentication
-    if (useUserConfig) {
-      const session = await getServerSession(authOptions);
-      if (!session?.user?.id || session.user.id !== userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    // Verify authentication
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id || session.user.id !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get agent and process message
-    const supportAgent = await getUserAgent(userId, useUserConfig);
-    const result = await supportAgent.processMessage(message, []);
+    const supportAgent = await getUserAgent(userId, agentId);
+    const result = await supportAgent.processMessage(message, chatHistory);
 
     return NextResponse.json(result);
   } catch (error) {
