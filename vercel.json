@@ -5,7 +5,7 @@
     }
   },
   "env": {
-    "OPENAI_API_KEY": "@openai-api-key",
+    "OPENAI_API_KEY": "@open_api_key",
     "SHOP_NAME": "@shop-name",
     "SHOP_DESCRIPTION": "@shop-description",
     "SHOP_POLICIES": "@shop-policies",
