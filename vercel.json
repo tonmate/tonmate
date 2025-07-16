@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "src/app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "OPENAI_API_KEY": "@openai-api-key",
+    "SHOP_NAME": "@shop-name",
+    "SHOP_DESCRIPTION": "@shop-description",
+    "SHOP_POLICIES": "@shop-policies",
+    "SHOP_CONTACT_EMAIL": "@shop-contact-email",
+    "SHOP_CONTACT_PHONE": "@shop-contact-phone"
+  }
+}
