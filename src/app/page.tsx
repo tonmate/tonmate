@@ -16,9 +16,9 @@ export default function Home() {
             <nav className="hidden md:flex space-x-8">
               <a href="#features" className="text-gray-600 hover:text-gray-900 transition-colors">Features</a>
               <a href="#demo" className="text-gray-600 hover:text-gray-900 transition-colors">Demo</a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 transition-colors">Pricing</a>
-              <Link href="/chat" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Try Demo
+              <Link href="/auth/signin" className="text-gray-600 hover:text-gray-900 transition-colors">Sign In</Link>
+              <Link href="/auth/signup" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Get Started
               </Link>
             </nav>
           </div>
@@ -38,13 +38,13 @@ export default function Home() {
               order tracking, and customer service 24/7. Built with LangChain.js and OpenAI.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/chat" className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
-                Try Live Demo
+              <Link href="/auth/signup" className="bg-blue-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center">
+                Get Started Free
                 <span className="ml-2">→</span>
               </Link>
-              <a href="#features" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors">
-                Learn More
-              </a>
+              <Link href="/chat" className="border border-gray-300 text-gray-700 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-colors">
+                Try Demo
+              </Link>
             </div>
           </div>
         </div>
