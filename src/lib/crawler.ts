@@ -213,7 +213,7 @@ export class StoreCrawler {
     ];
   }
 
-  private extractText($element: cheerio.Cheerio<cheerio.Element>, selectors: string[]): string {
+  private extractText($element: cheerio.Cheerio, selectors: string[]): string {
     for (const selector of selectors) {
       const text = $element.find(selector).first().text().trim();
       if (text) return text;
@@ -221,7 +221,7 @@ export class StoreCrawler {
     return '';
   }
 
-  private extractAttribute($element: cheerio.Cheerio<cheerio.Element>, selectors: string[], attribute: string): string {
+  private extractAttribute($element: cheerio.Cheerio, selectors: string[], attribute: string): string {
     for (const selector of selectors) {
       const attr = $element.find(selector).first().attr(attribute);
       if (attr) return attr;
