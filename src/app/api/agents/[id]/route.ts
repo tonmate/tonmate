@@ -6,8 +6,9 @@ import { prisma } from '../../../../lib/db';
 // GET /api/agents/[id] - Get specific agent
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -16,7 +17,7 @@ export async function GET(
 
     const agent = await prisma.agent.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       },
       include: {
@@ -49,8 +50,9 @@ export async function GET(
 // PUT /api/agents/[id] - Update agent
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -71,7 +73,7 @@ export async function PUT(
     // Verify agent ownership
     const existingAgent = await prisma.agent.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     });
@@ -82,7 +84,7 @@ export async function PUT(
 
     // Update the agent
     const agent = await prisma.agent.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(name && { name: name.trim() }),
         ...(description !== undefined && { description: description.trim() }),
@@ -112,8 +114,9 @@ export async function PUT(
 // DELETE /api/agents/[id] - Delete agent
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -123,7 +126,7 @@ export async function DELETE(
     // Verify agent ownership
     const existingAgent = await prisma.agent.findFirst({
       where: {
-        id: params.id,
+        id: id,
         userId: session.user.id
       }
     });
@@ -134,7 +137,7 @@ export async function DELETE(
 
     // Delete the agent (cascade will handle related records)
     await prisma.agent.delete({
-      where: { id: params.id }
+      where: { id: id }
     });
 
     return NextResponse.json({ success: true });
