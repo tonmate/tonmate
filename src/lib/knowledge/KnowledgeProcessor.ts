@@ -24,6 +24,32 @@ export class KnowledgeProcessor {
 
   constructor(private userId: string) {}
 
+  private async logProcessingStep(
+    knowledgeSourceId: string,
+    level: 'info' | 'warning' | 'error' | 'success',
+    message: string,
+    details?: any,
+    url?: string,
+    step?: string,
+    progress?: number
+  ): Promise<void> {
+    try {
+      await prisma.processingLog.create({
+        data: {
+          knowledgeSourceId,
+          level,
+          message,
+          details: details ? JSON.stringify(details) : undefined,
+          url,
+          step,
+          progress
+        }
+      });
+    } catch (error) {
+      console.error('Failed to log processing step:', error);
+    }
+  }
+
   private async initializeEmbeddingService(): Promise<boolean> {
     try {
       // Get user's encrypted OpenAI API key
@@ -54,6 +80,17 @@ export class KnowledgeProcessor {
   ): Promise<ProcessingResult> {
     try {
       console.log(`🚀 Starting knowledge processing for: ${url}`);
+      
+      // Log processing start
+      await this.logProcessingStep(
+        knowledgeSourceId,
+        'info',
+        'Starting website processing',
+        { url, options },
+        url,
+        'started',
+        0
+      );
 
       // Update knowledge source status
       await prisma.knowledgeSource.update({
@@ -70,21 +107,76 @@ export class KnowledgeProcessor {
 
       // Initialize embedding service if needed
       const embeddingEnabled = generateEmbeddings && await this.initializeEmbeddingService();
+      
+      if (!embeddingEnabled) {
+        await this.logProcessingStep(
+          knowledgeSourceId,
+          'warning',
+          'Embedding generation disabled - no API key or disabled by user',
+          { generateEmbeddings, hasApiKey: !!this.embeddingService },
+          url,
+          'embedding_setup',
+          10
+        );
+      }
 
       // 1. Crawl the website
-      console.log('📡 Starting website crawl...');
+      console.log('📡 Starting website crawl for:', url);
+      await this.logProcessingStep(
+        knowledgeSourceId,
+        'info',
+        'Starting website crawl',
+        { maxPages, maxDepth },
+        url,
+        'crawl_start',
+        15
+      );
+      
       const crawler = new WebsiteCrawler(url);
+      console.log('🔍 Crawler initialized, starting crawl...');
+      
       const crawledDocuments = await crawler.crawlWebsite({
         maxPages,
         maxDepth,
         delay: 1000
       });
 
+      console.log(`📊 Crawl completed. Found ${crawledDocuments.length} documents`);
+      
       if (crawledDocuments.length === 0) {
+        console.error('❌ No documents could be crawled from the website');
+        await this.logProcessingStep(
+          knowledgeSourceId,
+          'error',
+          'No documents could be crawled from the website',
+          { url, maxPages, maxDepth },
+          url,
+          'crawl_failed',
+          20
+        );
+        
+        // Update knowledge source status to failed
+        await prisma.knowledgeSource.update({
+          where: { id: knowledgeSourceId },
+          data: { status: 'failed' }
+        });
+        
         throw new Error('No documents could be crawled from the website');
       }
 
       console.log(`✓ Crawled ${crawledDocuments.length} pages`);
+      await this.logProcessingStep(
+        knowledgeSourceId,
+        'success',
+        `Successfully crawled ${crawledDocuments.length} pages`,
+        { 
+          totalPages: crawledDocuments.length,
+          pages: crawledDocuments.map(doc => ({ title: doc.title, url: doc.url, wordCount: doc.wordCount }))
+        },
+        url,
+        'crawl_completed',
+        30
+      );
 
       // 2. Process each document
       let totalChunksCreated = 0;
@@ -92,15 +184,52 @@ export class KnowledgeProcessor {
 
       for (const [index, doc] of crawledDocuments.entries()) {
         console.log(`📄 Processing document ${index + 1}/${crawledDocuments.length}: ${doc.title}`);
+        
+        const progress = 30 + (index / crawledDocuments.length) * 60;
+        await this.logProcessingStep(
+          knowledgeSourceId,
+          'info',
+          `Processing document: ${doc.title}`,
+          { 
+            index: index + 1,
+            total: crawledDocuments.length,
+            title: doc.title,
+            wordCount: doc.wordCount,
+            url: doc.url
+          },
+          doc.url,
+          'page_processing',
+          progress
+        );
 
         // Create document chunks for embedding
         let chunks: DocumentChunk[] = [];
         if (embeddingEnabled && this.embeddingService) {
           chunks = this.embeddingService.chunkText(doc.content, doc.url, doc.title);
           
+          await this.logProcessingStep(
+            knowledgeSourceId,
+            'info',
+            `Created ${chunks.length} chunks for embedding`,
+            { chunksCount: chunks.length, chunkSize },
+            doc.url,
+            'chunks_created',
+            progress + 5
+          );
+          
           if (chunks.length > 0) {
             // Generate embeddings for chunks
             chunks = await this.embeddingService.generateEmbeddings(chunks);
+            
+            await this.logProcessingStep(
+              knowledgeSourceId,
+              'success',
+              `Generated embeddings for ${chunks.length} chunks`,
+              { embeddingsCount: chunks.length },
+              doc.url,
+              'embeddings_generated',
+              progress + 10
+            );
           }
         }
 
@@ -120,6 +249,16 @@ export class KnowledgeProcessor {
               }))) : undefined
           }
         });
+        
+        await this.logProcessingStep(
+          knowledgeSourceId,
+          'success',
+          `Document saved to database`,
+          { documentId: document.id, hasEmbeddings: chunks.length > 0 },
+          doc.url,
+          'document_saved',
+          progress + 15
+        );
 
         totalChunksCreated += chunks.length;
         totalEmbeddingsGenerated += chunks.filter(c => c.embedding).length;
@@ -163,11 +302,41 @@ export class KnowledgeProcessor {
 
       console.log('🎉 Knowledge processing completed successfully!');
       console.log(`📊 Results: ${result.documentsProcessed} docs, ${result.chunksCreated} chunks, ${result.embeddingsGenerated} embeddings`);
+      
+      // Log completion
+      await this.logProcessingStep(
+        knowledgeSourceId,
+        'success',
+        'Knowledge processing completed successfully',
+        {
+          documentsProcessed: result.documentsProcessed,
+          chunksCreated: result.chunksCreated,
+          embeddingsGenerated: result.embeddingsGenerated,
+          crawlStats: crawler.getStats()
+        },
+        url,
+        'completed',
+        100
+      );
 
       return result;
 
     } catch (error) {
       console.error('💥 Knowledge processing failed:', error);
+      
+      // Log the error
+      await this.logProcessingStep(
+        knowledgeSourceId,
+        'error',
+        'Knowledge processing failed',
+        {
+          error: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : undefined
+        },
+        url,
+        'failed',
+        0
+      );
 
       // Update knowledge source with error status
       await prisma.knowledgeSource.update({

@@ -1,10 +1,11 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { PlusIcon, CogIcon, ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon } from '@heroicons/react/24/outline';
+import DashboardLayout from '../../components/Layout/DashboardLayout';
+import { PlusIcon, ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface Agent {
   id: string;
@@ -17,7 +18,7 @@ interface Agent {
   isActive: boolean;
   createdAt: string;
   knowledgeSources: KnowledgeSource[];
-  _count: {
+  _count?: {
     conversations: number;
   };
 }
@@ -41,6 +42,15 @@ export default function Dashboard() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [processingKnowledge, setProcessingKnowledge] = useState<string | null>(null);
+  const [hasProcessingItems, setHasProcessingItems] = useState(false);
+  const [showKnowledgeModal, setShowKnowledgeModal] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [isCreatingKnowledge, setIsCreatingKnowledge] = useState(false);
+  const [newKnowledgeSource, setNewKnowledgeSource] = useState({
+    name: '',
+    url: '',
+    type: 'website' as const
+  });
   const [newAgent, setNewAgent] = useState({
     name: '',
     description: '',
@@ -62,12 +72,31 @@ export default function Dashboard() {
     }
   }, [session]);
 
+  // Auto-refresh when there are processing items
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (hasProcessingItems && session?.user?.id) {
+      interval = setInterval(() => {
+        fetchAgents();
+      }, 5000); // Check every 5 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [hasProcessingItems, session]);
+
   const fetchAgents = async () => {
     try {
       const response = await fetch('/api/agents');
       if (response.ok) {
         const data = await response.json();
         setAgents(data);
+        
+        // Check if any knowledge sources are processing
+        const hasProcessing = data.some((agent: Agent) => 
+          agent.knowledgeSources.some((source: KnowledgeSource) => source.status === 'processing')
+        );
+        setHasProcessingItems(hasProcessing);
       }
     } catch (error) {
       console.error('Error fetching agents:', error);
@@ -136,6 +165,52 @@ export default function Dashboard() {
     }
   };
 
+  const createKnowledgeSource = async () => {
+    if (!selectedAgentId || !newKnowledgeSource.name || !newKnowledgeSource.url) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    setIsCreatingKnowledge(true);
+    try {
+      const response = await fetch('/api/knowledge-sources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          agentId: selectedAgentId,
+          name: newKnowledgeSource.name,
+          url: newKnowledgeSource.url,
+          type: newKnowledgeSource.type
+        }),
+      });
+
+      if (response.ok) {
+        // Reset form and close modal
+        setNewKnowledgeSource({ name: '', url: '', type: 'website' });
+        setShowKnowledgeModal(false);
+        setSelectedAgentId(null);
+        // Refresh agents
+        fetchAgents();
+        alert('Knowledge source created successfully! You can now process it to crawl and embed the content.');
+      } else {
+        const error = await response.json();
+        alert(`Failed to create knowledge source: ${error.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error creating knowledge source:', error);
+      alert('Error creating knowledge source');
+    } finally {
+      setIsCreatingKnowledge(false);
+    }
+  };
+
+  const openKnowledgeModal = (agentId: string) => {
+    setSelectedAgentId(agentId);
+    setShowKnowledgeModal(true);
+  };
+
   const deleteAgent = async (id: string) => {
     if (!confirm('Are you sure you want to delete this agent?')) {
       return;
@@ -170,33 +245,20 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <Link href="/" className="text-xl font-bold text-gray-900">
-                Customer Support AI
-              </Link>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                Welcome, {session?.user?.email}
-              </span>
-              <button
-                onClick={() => signOut()}
-                className="text-sm text-gray-600 hover:text-gray-900"
-              >
-                Sign Out
-              </button>
+    <DashboardLayout 
+      title="Dashboard" 
+      description="Manage your AI agents and knowledge sources"
+    >
+      <div className="p-6">
+        {/* Processing Status */}
+        {hasProcessingItems && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <span className="animate-pulse text-yellow-600">🔄</span>
+              <span className="text-sm font-medium text-yellow-800">Processing knowledge sources...</span>
             </div>
           </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        )}
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -242,9 +304,9 @@ export default function Dashboard() {
                     <div className="flex items-center space-x-2">
                       <Link 
                         href={`/dashboard/agents/${agent.id}`}
-                        className="text-gray-400 hover:text-gray-600"
+                        className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                       >
-                        <CogIcon className="h-5 w-5" />
+                        Details
                       </Link>
                       <button
                         onClick={() => deleteAgent(agent.id)}
@@ -264,7 +326,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <div className="flex items-center">
                       <ChatBubbleLeftIcon className="h-4 w-4 mr-1" />
-                      <span>{agent._count.conversations} conversations</span>
+                      <span>{agent._count?.conversations || 0} conversations</span>
                     </div>
                     <div className="flex items-center">
                       <DocumentTextIcon className="h-4 w-4 mr-1" />
@@ -290,22 +352,34 @@ export default function Dashboard() {
                     </div>
                     
                     {/* Knowledge Sources */}
-                    {agent.knowledgeSources.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-gray-100">
-                        <h4 className="text-sm font-medium text-gray-900 mb-2">Knowledge Sources</h4>
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-medium text-gray-900">Knowledge Sources</h4>
+                        <button
+                          onClick={() => openKnowledgeModal(agent.id)}
+                          className="px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md border border-blue-200"
+                        >
+                          + Add Source
+                        </button>
+                      </div>
+                      
+                      {agent.knowledgeSources.length > 0 ? (
                         <div className="space-y-2">
                           {agent.knowledgeSources.map((source: KnowledgeSource) => (
                             <div key={source.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium">{source.name}</span>
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                    source.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                    source.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                                    source.status === 'failed' ? 'bg-red-100 text-red-800' :
-                                    'bg-gray-100 text-gray-800'
+                                  <span className="text-sm font-medium text-gray-900">{source.name}</span>
+                                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                                    source.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+                                    source.status === 'processing' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                                    source.status === 'failed' ? 'bg-red-100 text-red-800 border border-red-200' :
+                                    'bg-gray-100 text-gray-800 border border-gray-200'
                                   }`}>
-                                    {source.status}
+                                    {source.status === 'processing' && <span className="animate-pulse mr-1">🔄</span>}
+                                    {source.status === 'completed' && <span className="mr-1">✅</span>}
+                                    {source.status === 'failed' && <span className="mr-1">❌</span>}
+                                    {source.status.toUpperCase()}
                                   </span>
                                 </div>
                                 {source.url && (
@@ -324,17 +398,18 @@ export default function Dashboard() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <p className="text-xs text-gray-500 italic">No knowledge sources yet. Add a website to train your agent.</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </main>
 
-      {/* Create Agent Modal */}
+        {/* Create Agent Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
@@ -348,7 +423,7 @@ export default function Dashboard() {
                     type="text"
                     value={newAgent.name}
                     onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     placeholder="e.g., Customer Support Bot"
                   />
                 </div>
@@ -358,7 +433,7 @@ export default function Dashboard() {
                   <textarea
                     value={newAgent.description}
                     onChange={(e) => setNewAgent({...newAgent, description: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     rows={3}
                     placeholder="Brief description of what this agent does..."
                   />
@@ -370,7 +445,7 @@ export default function Dashboard() {
                     type="text"
                     value={newAgent.greeting}
                     onChange={(e) => setNewAgent({...newAgent, greeting: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
                     placeholder="Hello! How can I help you today?"
                   />
                 </div>
@@ -395,6 +470,66 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Create Knowledge Source Modal */}
+      {showKnowledgeModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Knowledge Source</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Name *</label>
+                  <input
+                    type="text"
+                    value={newKnowledgeSource.name}
+                    onChange={(e) => setNewKnowledgeSource({...newKnowledgeSource, name: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+                    placeholder="e.g., Company Website"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Website URL *</label>
+                  <input
+                    type="url"
+                    value={newKnowledgeSource.url}
+                    onChange={(e) => setNewKnowledgeSource({...newKnowledgeSource, url: e.target.value})}
+                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+                    placeholder="https://example.com"
+                  />
+                </div>
+
+                <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
+                  <strong>Note:</strong> After creating the knowledge source, click the "Process" button to crawl the website and generate embeddings for AI training.
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowKnowledgeModal(false);
+                    setSelectedAgentId(null);
+                    setNewKnowledgeSource({ name: '', url: '', type: 'website' });
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createKnowledgeSource}
+                  disabled={!newKnowledgeSource.name.trim() || !newKnowledgeSource.url.trim() || isCreatingKnowledge}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md"
+                >
+                  {isCreatingKnowledge ? 'Creating...' : 'Create Knowledge Source'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+    </DashboardLayout>
   );
 }

@@ -49,10 +49,26 @@ model User {
   sessions      Session[]
   
   // User configuration
-  openaiApiKey  String?   // Encrypted
+  openaiApiKey      String?   // Encrypted
+  openaiModel       String?   @default("gpt-3.5-turbo")
+  defaultTemperature Float?   @default(0.7)
+  defaultMaxTokens  Int?      @default(1000)
+  
+  // Additional LLM providers
+  anthropicApiKey   String?   // Encrypted
+  anthropicModel    String?   @default("claude-3-sonnet-20240229")
+  cohereApiKey      String?   // Encrypted
+  huggingFaceApiKey String?   // Encrypted
+  
+  // Integration settings
+  webhookUrl        String?
+  webhookSecret     String?   // Encrypted
   
   // User's agents
   agents        Agent[]
+  
+  // API Keys
+  apiKeys       ApiKey[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -99,6 +115,7 @@ model KnowledgeSource {
   // Relations
   agent           Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
   documents       Document[]
+  processingLogs  ProcessingLog[]
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -132,4 +149,31 @@ model Conversation {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model ProcessingLog {
+  id              String   @id @default(cuid())
+  knowledgeSourceId String
+  level           String   // "info", "warning", "error", "success"
+  message         String
+  details         Json?    // Additional structured data
+  url             String?  // Related URL if applicable
+  step            String?  // Processing step: "started", "link_found", "page_crawled", "embedding_generated", "completed", "failed"
+  progress        Float?   // Progress percentage (0-100)
+  
+  // Relations
+  knowledgeSource KnowledgeSource @relation(fields: [knowledgeSourceId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+}
+
+model ApiKey {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastUsed  DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

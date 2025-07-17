@@ -29,6 +29,11 @@ export async function GET(
         conversations: {
           orderBy: { createdAt: 'desc' },
           take: 10 // Latest 10 conversations
+        },
+        _count: {
+          select: {
+            conversations: true
+          }
         }
       }
     });

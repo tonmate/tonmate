@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '../../../lib/auth';
 import { prisma } from '../../../lib/db';
 import { decrypt } from '../../../lib/encryption';
-import { UniversalSupportAgent } from '../../../../lib/agents/UniversalSupportAgent.js';
+import { UniversalSupportAgent } from '../../../lib/agents/UniversalSupportAgent';
 
 // Cache for agents per user
 const userAgents = new Map<string, UniversalSupportAgent>();
@@ -58,33 +58,36 @@ async function getUserAgent(userId: string, agentId?: string) {
       };
     }
 
-    // Initialize the universal agent
-    agent = new UniversalSupportAgent({
-      name: agentConfig.name,
-      description: agentConfig.description,
-      prompt: agentConfig.prompt,
-      greeting: agentConfig.greeting,
-      temperature: agentConfig.temperature,
-      llmProvider: agentConfig.llmProvider
-    });
-
-    // Use user's OpenAI API key if available
+    // Decrypt user's API key if available
+    let userApiKey: string | undefined;
     if (user.openaiApiKey) {
       try {
-        const decryptedKey = decrypt(user.openaiApiKey);
-        process.env.OPENAI_API_KEY = decryptedKey;
+        userApiKey = decrypt(user.openaiApiKey);
       } catch (error) {
         console.error('Error decrypting user API key:', error);
       }
     }
+
+    // Initialize the universal agent with user-specific settings
+    agent = new UniversalSupportAgent({
+      name: agentConfig.name,
+      description: agentConfig.description || 'AI Support Agent',
+      prompt: agentConfig.prompt,
+      greeting: agentConfig.greeting,
+      temperature: user.defaultTemperature || agentConfig.temperature || 0.7,
+      llmProvider: agentConfig.llmProvider,
+      apiKey: userApiKey,
+      model: user.openaiModel || 'gpt-3.5-turbo',
+      maxTokens: user.defaultMaxTokens || 1000
+    });
 
     // Prepare knowledge base from documents
     const knowledgeBase = agentConfig.knowledgeSources?.flatMap(source => 
       source.documents?.map(doc => ({
         title: doc.title,
         content: doc.content,
-        url: doc.url,
-        sourceType: source.type
+        url: doc.url || '',
+        sourceType: source.type || 'website'
       })) || []
     ) || [];
 
