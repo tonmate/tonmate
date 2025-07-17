@@ -15,6 +15,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+    
     services:
       postgres:
         image: postgres:15
@@ -46,9 +54,12 @@ jobs:
     - name: Setup test environment
       run: |
         cp environment.example .env.local
-        echo "DATABASE_URL=postgresql://test:test@localhost:5432/test" >> .env.local
-        echo "NEXTAUTH_SECRET=test-secret-key-for-github-actions" >> .env.local
-        echo "NEXTAUTH_URL=http://localhost:3000" >> .env.local
+        echo "DATABASE_URL=$DATABASE_URL" >> .env.local
+        echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
+        echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
+        echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
+        echo "JWT_SECRET=$JWT_SECRET" >> .env.local
+        echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
 
     - name: Generate Prisma client
       run: npm run db:generate
@@ -186,8 +197,8 @@ jobs:
       if: always()
       run: |
         if [ "${{ needs.deploy-production.result }}" == "success" ]; then
-          echo "✅ Production deployment successful"
+          echo " Production deployment successful"
         else
-          echo "❌ Production deployment failed"
+          echo " Production deployment failed"
           exit 1
         fi
