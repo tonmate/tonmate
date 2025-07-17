@@ -1,6 +1,14 @@
 version: '3.8'
 
+# ===========================================
+# TONMATE - FULL PRODUCTION DOCKER COMPOSE
+# ===========================================
+# This file contains the complete setup with all optional services.
+# For a minimal setup, use docker-compose.minimal.yml instead.
+
 services:
+  # === REQUIRED SERVICES ===
+  
   # Tonmate AI Customer Support Platform
   app:
     build: .
@@ -33,7 +41,9 @@ services:
       retries: 3
       start_period: 60s
 
-  # PostgreSQL Database
+  # === REQUIRED SERVICES ===
+  
+  # PostgreSQL Database (REQUIRED)
   db:
     image: postgres:15-alpine
     container_name: tonmate-db
@@ -55,7 +65,9 @@ services:
       timeout: 10s
       retries: 3
 
-  # Redis Cache (Optional)
+  # === OPTIONAL SERVICES ===
+  
+  # Redis Cache (OPTIONAL - Used for caching and session storage)
   redis:
     image: redis:7-alpine
     container_name: tonmate-redis
@@ -72,7 +84,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # Nginx Reverse Proxy (Optional)
+  # Nginx Reverse Proxy (OPTIONAL - For production deployments)
   nginx:
     image: nginx:alpine
     container_name: customer-support-ai-nginx
@@ -88,10 +100,14 @@ services:
       - app-network
     restart: unless-stopped
 
-volumes:
-  postgres_data:
-  redis_data:
+# === VOLUMES AND NETWORKS ===
 
+# Volumes
+volumes:
+  postgres_data:  # REQUIRED - PostgreSQL data
+  redis_data:     # OPTIONAL - Redis data
+
+# Networks
 networks:
   app-network:
     driver: bridge

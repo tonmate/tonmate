@@ -133,7 +133,7 @@ jobs:
         echo "Deploying to staging environment..."
         # Add your staging deployment commands here
         # Example: SSH to staging server and pull latest image
-        # ssh user@staging-server "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest && docker-compose up -d"
+        # ssh user@staging-server "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest && cd docker && docker-compose up -d"
 
   deploy-production:
     needs: deploy-staging
@@ -150,7 +150,7 @@ jobs:
         echo "Deploying to production environment..."
         # Add your production deployment commands here
         # Example: SSH to production server and pull latest image
-        # ssh user@production-server "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest && docker-compose up -d"
+        # ssh user@production-server "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest && cd docker && docker-compose up -d"
 
   health-check:
     needs: [deploy-staging, deploy-production]

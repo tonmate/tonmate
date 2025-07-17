@@ -49,17 +49,33 @@ npm run db:push
 npm run dev
 ```
 
+### Using Docker (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/tonmate/tonmate.git
+cd tonmate
+
+# Start with Docker Compose
+cd docker
+docker-compose up -d
+
+# Access the application
+open http://localhost:3000
+```
+
 ### Production Deployment
 
 ```bash
 # Quick Docker deployment
+cd docker
 docker-compose -f docker-compose.prod.yml up -d
 
 # Or using deployment script
-./scripts/deploy.sh --env production
+./scripts/deploy/deploy.sh --env production
 
 # Health check
-./healthcheck.js
+./docker/healthcheck.js
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
