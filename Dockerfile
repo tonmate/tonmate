@@ -1,4 +1,4 @@
-# Customer Support AI Agent - Production Dockerfile
+# Tonmate - Production Dockerfile
 
 # Use Node.js 20 Alpine as base image
 FROM node:20-alpine AS base

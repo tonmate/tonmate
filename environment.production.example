@@ -1,0 +1,179 @@
+# ===========================================
+# TONMATE - AI CUSTOMER SUPPORT PLATFORM
+# Production Environment Configuration
+# ===========================================
+
+# NextAuth Configuration (REQUIRED - Replace with secure values)
+NEXTAUTH_SECRET=your_production_secret_here_minimum_32_characters_long
+NEXTAUTH_URL=https://yourdomain.com
+
+# Database Configuration (REQUIRED - Use PostgreSQL for production)
+DATABASE_URL="postgresql://username:password@host:port/database?sslmode=require"
+
+# Alternative database configurations:
+# For managed PostgreSQL services:
+# DATABASE_URL="postgresql://username:password@your-postgres-host:5432/tonmate?sslmode=require"
+# For Docker deployment:
+# DATABASE_URL="postgresql://postgres:your_password@db:5432/tonmate"
+
+# AI/LLM Configuration (REQUIRED)
+OPENAI_API_KEY=your_production_openai_api_key_here
+
+# Optional: Additional AI providers
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+COHERE_API_KEY=your_cohere_api_key_here
+GOOGLE_AI_API_KEY=your_google_ai_api_key_here
+MISTRAL_API_KEY=your_mistral_api_key_here
+
+# Application Configuration
+NODE_ENV=production
+NEXT_PUBLIC_APP_URL=https://yourdomain.com
+NEXT_PUBLIC_APP_NAME="Tonmate"
+
+# Security & Encryption Configuration (REQUIRED - Generate secure keys)
+ENCRYPTION_KEY=your_32_character_encryption_key_here
+
+# Database Security
+POSTGRES_PASSWORD=your_secure_database_password_here
+POSTGRES_USER=your_database_username
+POSTGRES_DB=tonmate
+
+# Redis Configuration (Recommended for production)
+REDIS_URL=redis://redis:6379
+REDIS_PASSWORD=your_secure_redis_password_here
+
+# Rate Limiting Configuration
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_MAX_REQUESTS=100
+RATE_LIMIT_WINDOW_MS=900000
+
+# Security Headers and CORS
+CORS_ORIGIN=https://yourdomain.com
+SECURITY_HEADERS_ENABLED=true
+HSTS_MAX_AGE=31536000
+
+# SSL Configuration
+SSL_CERT_PATH=/etc/nginx/ssl/cert.pem
+SSL_KEY_PATH=/etc/nginx/ssl/key.pem
+
+# Email Configuration (REQUIRED for notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@yourdomain.com
+SMTP_PASSWORD=your_email_app_password
+FROM_EMAIL=noreply@yourdomain.com
+
+# File Upload Configuration
+MAX_FILE_SIZE=10485760
+UPLOAD_PATH=/app/uploads
+ALLOWED_FILE_TYPES=.txt,.pdf,.doc,.docx,.html,.json,.csv
+
+# Knowledge Processing Configuration
+MAX_CRAWL_DEPTH=5
+MAX_PAGES_PER_SITE=100
+CRAWL_DELAY_MS=500
+CRAWL_TIMEOUT_MS=45000
+CRAWL_CONCURRENCY=5
+
+# Logging Configuration
+LOG_LEVEL=info
+LOG_FILE_PATH=/app/logs/app.log
+LOG_MAX_SIZE=10MB
+LOG_MAX_FILES=5
+
+# Monitoring & Analytics
+SENTRY_DSN=your_sentry_dsn_here
+GOOGLE_ANALYTICS_ID=your_ga_id_here
+NEW_RELIC_LICENSE_KEY=your_newrelic_license_key
+
+# Feature Flags
+FEATURE_SIGNUP_ENABLED=true
+FEATURE_GUEST_MODE=false
+FEATURE_ANALYTICS=true
+FEATURE_EMAIL_NOTIFICATIONS=true
+FEATURE_ADVANCED_ANALYTICS=true
+FEATURE_MULTI_TENANT=true
+
+# Production Optimization
+NEXT_BUNDLE_ANALYZER=false
+NEXT_COMPRESS=true
+NEXT_CACHE_TTL=3600
+NEXT_STATIC_OPTIMIZATION=true
+
+# Database Connection Pool
+DATABASE_POOL_SIZE=10
+DATABASE_POOL_TIMEOUT=30000
+DATABASE_POOL_IDLE_TIMEOUT=600000
+
+# Cache Configuration
+CACHE_TTL=3600
+CACHE_MAX_SIZE=100MB
+CACHE_ENABLED=true
+
+# Backup Configuration
+BACKUP_ENABLED=true
+BACKUP_SCHEDULE=0 2 * * *
+BACKUP_RETENTION_DAYS=30
+BACKUP_PATH=/backups
+S3_BACKUP_BUCKET=your-backup-bucket
+
+# Health Check Configuration
+HEALTH_CHECK_ENABLED=true
+HEALTH_CHECK_INTERVAL=30
+HEALTH_CHECK_TIMEOUT=10
+
+# Container Configuration
+CONTAINER_PORT=3000
+CONTAINER_USER=nextjs
+CONTAINER_GROUP=nodejs
+
+# ===========================================
+# CLOUD PROVIDER SPECIFIC CONFIGURATIONS
+# ===========================================
+
+# AWS Configuration
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=your_aws_access_key
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key
+AWS_S3_BUCKET=your-s3-bucket
+
+# Google Cloud Configuration
+GOOGLE_CLOUD_PROJECT_ID=your-gcp-project-id
+GOOGLE_CLOUD_REGION=us-central1
+GOOGLE_CLOUD_CREDENTIALS_PATH=/app/credentials/gcp-key.json
+
+# Azure Configuration
+AZURE_SUBSCRIPTION_ID=your_azure_subscription_id
+AZURE_RESOURCE_GROUP=your_resource_group
+AZURE_REGION=eastus
+
+# ===========================================
+# EXTERNAL SERVICES
+# ===========================================
+
+# Stripe (for billing)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Twilio (for SMS notifications)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
+
+# SendGrid (alternative email service)
+SENDGRID_API_KEY=your_sendgrid_api_key
+
+# ===========================================
+# SECURITY NOTES
+# ===========================================
+
+# 1. Never commit this file to version control
+# 2. Use environment variable management tools in production
+# 3. Rotate API keys and secrets regularly
+# 4. Enable 2FA for all service accounts
+# 5. Use secure password generation tools
+# 6. Monitor logs for unauthorized access attempts
+# 7. Set up alerting for security events
+# 8. Regular security audits and penetration testing
+# 9. Keep all dependencies updated
+# 10. Use HTTPS only in production

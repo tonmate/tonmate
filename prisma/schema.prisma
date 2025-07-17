@@ -74,6 +74,12 @@ model User {
   crawlRequests CrawlRequest[]
   knowledgeBases KnowledgeBase[]
   
+  // Model configurations
+  modelConfigurations ModelConfiguration[]
+  
+  // Crawler configuration
+  crawlerConfiguration CrawlerConfiguration?
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -95,6 +101,9 @@ model Agent {
   greeting        String   @default("Hello! How can I help you today?")
   temperature     Float    @default(0.7)
   llmProvider     String   @default("openai")
+  model           String   @default("gpt-4")
+  maxTokens       Int      @default(2000)
+  settings        String?  // JSON string for additional settings
   isActive        Boolean  @default(true)
   
   // Relations
@@ -133,6 +142,8 @@ model Document {
   url             String?  // Original URL if from web crawling
   wordCount       Int?
   embedding       String?  @default("null") // Vector embeddings for semantic search (JSON as string)
+  htmlContent     String?  // Structured content in HTML/Markdown format
+  metadata        String?  // Additional metadata as JSON string (content type, extraction info, etc.)
   
   // Relations
   source          KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
@@ -274,4 +285,76 @@ model KnowledgeChunk {
   page            CrawledPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
   
   createdAt       DateTime @default(now())
+}
+
+// Model Configuration for AI Providers
+model ModelConfiguration {
+  id              String   @id @default(cuid())
+  userId          String
+  providerId      String   // "openai", "anthropic", "google", "mistral", "cohere"
+  apiKey          String   // Encrypted
+  defaultModel    String
+  temperature     Float    @default(0.7)
+  maxTokens       Int      @default(2000)
+  topP            Float    @default(0.9)
+  frequencyPenalty Float   @default(0)
+  presencePenalty Float    @default(0)
+  isActive        Boolean  @default(true)
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId, providerId])
+}
+
+// Crawler Configuration
+model CrawlerConfiguration {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // General settings
+  maxPages        Int      @default(10)
+  maxDepth        Int      @default(3)
+  crawlDelay      Int      @default(1000)
+  userAgent       String   @default("AI-Support-Agent/1.0")
+  
+  // Performance settings
+  concurrency     Int      @default(3)
+  timeout         Int      @default(30000)
+  retryAttempts   Int      @default(3)
+  maxFileSize     Int      @default(10485760) // 10MB
+  
+  // Filters
+  respectRobotsTxt Boolean @default(true)
+  followRedirects Boolean  @default(true)
+  includePatterns String   @default("[\"*\"]")
+  excludePatterns String   @default("[\"/admin/*\", \"/login/*\", \"/private/*\"]")
+  allowedFileTypes String  @default("[\"html\", \"htm\", \"php\", \"asp\", \"aspx\", \"jsp\"]")
+  customHeaders   String   @default("{}")
+  
+  // Advanced settings
+  enableJavaScript Boolean @default(false)
+  waitForSelector String   @default("")
+  maxConcurrentRequests Int @default(5)
+  requestInterval Int      @default(2000)
+  skipDuplicates  Boolean  @default(true)
+  extractImages   Boolean  @default(false)
+  extractLinks    Boolean  @default(true)
+  extractText     Boolean  @default(true)
+  extractMetadata Boolean  @default(true)
+  
+  // Enhanced content extraction
+  extractFullContent Boolean @default(true)
+  preserveFormatting Boolean @default(true)
+  extractTables     Boolean @default(true)
+  extractCodeBlocks Boolean @default(true)
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

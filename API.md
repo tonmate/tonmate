@@ -1,8 +1,8 @@
-# Customer Support AI Agent - API Documentation
+# Tonmate - API Documentation
 
 ## Overview
 
-This document describes the REST API endpoints for the Customer Support AI Agent platform. The API provides functionality for user authentication, agent management, knowledge source processing, and AI-powered chat interactions.
+This document describes the REST API endpoints for the Tonmate platform. The API provides functionality for user authentication, agent management, knowledge source processing, and AI-powered chat interactions.
 
 ## Base URL
 
@@ -595,4 +595,4 @@ For API support and questions:
 
 ---
 
-*This documentation is generated for Customer Support AI Agent v1.0.0*
+*This documentation is generated for Tonmate v1.0.0*

@@ -50,6 +50,43 @@ export class KnowledgeProcessor {
     }
   }
 
+  private async getCrawlerConfig() {
+    try {
+      // Try to get user's crawler configuration
+      const config = await prisma.crawlerConfiguration.findUnique({
+        where: { userId: this.userId }
+      });
+
+      if (config) {
+        return {
+          maxPages: config.maxPages,
+          maxDepth: config.maxDepth,
+          requestInterval: config.requestInterval,
+          // Enhanced extraction features from database
+          extractFullContent: config.extractFullContent,
+          preserveFormatting: config.preserveFormatting,
+          includeImages: config.extractImages,
+          extractTables: config.extractTables,
+          extractCodeBlocks: config.extractCodeBlocks
+        };
+      }
+    } catch (error) {
+      console.log('No crawler configuration found, using defaults');
+    }
+
+    // Return default configuration if none found
+    return {
+      maxPages: 50,
+      maxDepth: 3,
+      requestInterval: 2000,
+      extractFullContent: true,
+      preserveFormatting: true,
+      includeImages: true,
+      extractTables: true,
+      extractCodeBlocks: true
+    };
+  }
+
   private async initializeEmbeddingService(): Promise<boolean> {
     try {
       // Get user's encrypted OpenAI API key
@@ -132,13 +169,22 @@ export class KnowledgeProcessor {
         15
       );
       
-      const crawler = new WebsiteCrawler(url);
-      console.log('🔍 Crawler initialized, starting crawl...');
+      // Get global crawler configuration
+      const crawlerConfig = await this.getCrawlerConfig();
+      
+      const crawler = new WebsiteCrawler(url, {
+        extractFullContent: crawlerConfig.extractFullContent,
+        preserveFormatting: crawlerConfig.preserveFormatting,
+        includeImages: crawlerConfig.includeImages,
+        extractTables: crawlerConfig.extractTables,
+        extractCodeBlocks: crawlerConfig.extractCodeBlocks
+      });
+      console.log('🔍 Crawler initialized with global configuration, starting crawl...');
       
       const crawledDocuments = await crawler.crawlWebsite({
-        maxPages,
-        maxDepth,
-        delay: 1000
+        maxPages: crawlerConfig.maxPages,
+        maxDepth: crawlerConfig.maxDepth,
+        delay: crawlerConfig.requestInterval
       });
 
       console.log(`📊 Crawl completed. Found ${crawledDocuments.length} documents`);
@@ -202,16 +248,37 @@ export class KnowledgeProcessor {
           progress
         );
 
-        // Create document chunks for embedding
+        // Create document chunks for embedding using structured content
         let chunks: DocumentChunk[] = [];
         if (embeddingEnabled && this.embeddingService) {
-          chunks = this.embeddingService.chunkText(doc.content, doc.url, doc.title);
+          // Use structured content chunking if available, otherwise fall back to regular text chunking
+          if (doc.structuredContent) {
+            chunks = this.embeddingService.chunkStructuredContent(
+              doc.content, 
+              doc.structuredContent, 
+              doc.url, 
+              doc.title
+            );
+          } else {
+            chunks = this.embeddingService.chunkText(doc.content, doc.url, doc.title);
+          }
           
           await this.logProcessingStep(
             knowledgeSourceId,
             'info',
-            `Created ${chunks.length} chunks for embedding`,
-            { chunksCount: chunks.length, chunkSize },
+            `Created ${chunks.length} chunks for embedding (structured: ${!!doc.structuredContent})`,
+            { 
+              chunksCount: chunks.length, 
+              chunkSize, 
+              isStructured: !!doc.structuredContent,
+              structuredTypes: doc.structuredContent ? {
+                headings: doc.structuredContent.headings.length,
+                paragraphs: doc.structuredContent.paragraphs.length,
+                lists: doc.structuredContent.lists.length,
+                tables: doc.structuredContent.tables.length,
+                codeBlocks: doc.structuredContent.codeBlocks.length
+              } : null
+            },
             doc.url,
             'chunks_created',
             progress + 5
@@ -233,7 +300,7 @@ export class KnowledgeProcessor {
           }
         }
 
-        // Save document to database
+        // Save document to database with enhanced structured content
         const document = await prisma.document.create({
           data: {
             sourceId: knowledgeSourceId,
@@ -241,6 +308,15 @@ export class KnowledgeProcessor {
             content: doc.content,
             url: doc.url,
             wordCount: doc.wordCount,
+            // Store structured content for better LLM retrieval
+            htmlContent: doc.markdownContent || doc.content,
+            metadata: JSON.stringify({
+              contentType: doc.contentType,
+              extractedAt: doc.extractedAt,
+              structuredContent: doc.structuredContent,
+              hasMarkdown: !!doc.markdownContent,
+              hasStructuredContent: !!doc.structuredContent
+            }),
             embedding: embeddingEnabled && chunks.length > 0 ? 
               JSON.stringify(chunks.map(chunk => ({
                 content: chunk.content,
@@ -253,8 +329,22 @@ export class KnowledgeProcessor {
         await this.logProcessingStep(
           knowledgeSourceId,
           'success',
-          `Document saved to database`,
-          { documentId: document.id, hasEmbeddings: chunks.length > 0 },
+          `Document saved to database with enhanced content`,
+          { 
+            documentId: document.id, 
+            hasEmbeddings: chunks.length > 0,
+            contentType: doc.contentType,
+            hasStructuredContent: !!doc.structuredContent,
+            hasMarkdown: !!doc.markdownContent,
+            structuredElements: doc.structuredContent ? {
+              headings: doc.structuredContent.headings.length,
+              paragraphs: doc.structuredContent.paragraphs.length,
+              lists: doc.structuredContent.lists.length,
+              tables: doc.structuredContent.tables.length,
+              codeBlocks: doc.structuredContent.codeBlocks.length,
+              images: doc.structuredContent.images.length
+            } : null
+          },
           doc.url,
           'document_saved',
           progress + 15

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '../../components/Layout/DashboardLayout';
+import { Input, Button, Select, Card, Tabs, TabsList, TabsTrigger, TabsContent, Alert, Loading } from '../../components/ui';
 import { 
   CogIcon, 
   KeyIcon, 
@@ -140,10 +141,7 @@ export default function Settings() {
     return (
       <DashboardLayout title="Settings" description="Configure your integrations and preferences">
         <div className="flex items-center justify-center py-12">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-2 text-gray-600">Loading settings...</p>
-          </div>
+          <Loading size="lg" text="Loading settings..." />
         </div>
       </DashboardLayout>
     );
@@ -152,112 +150,87 @@ export default function Settings() {
   return (
     <DashboardLayout title="Settings" description="Configure your integrations and preferences">
       <div className="max-w-6xl mx-auto p-6">
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-200 mb-6">
-          <nav className="-mb-px flex space-x-8">
+        <Tabs defaultValue="llm" value={activeTab} onValueChange={(value: string) => setActiveTab(value as typeof activeTab)}>
+          <TabsList className="grid w-full grid-cols-3">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
-                    activeTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
+                  <Icon className="h-4 w-4" />
                   <span>{tab.name}</span>
-                </button>
+                </TabsTrigger>
               );
             })}
-          </nav>
-        </div>
+          </TabsList>
 
-        {/* LLM Providers Tab */}
-        {activeTab === 'llm' && (
-          <div className="space-y-6">
+          <TabsContent value="llm" className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">OpenAI Configuration</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    API Key
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showApiKey.openai ? 'text' : 'password'}
-                      value={settings.openaiApiKey}
-                      onChange={(e) => handleInputChange('openaiApiKey', e.target.value)}
-                      placeholder="sk-..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleApiKeyVisibility('openai')}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      <KeyIcon className="h-4 w-4 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Model
-                  </label>
-                  <select
-                    value={settings.openaiModel}
-                    onChange={(e) => handleInputChange('openaiModel', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  <Input
+                    label="API Key"
+                    type={showApiKey.openai ? 'text' : 'password'}
+                    value={settings.openaiApiKey}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('openaiApiKey', e.target.value)}
+                    placeholder="sk-..."
+                    className="text-gray-900 placeholder-gray-400"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => toggleApiKeyVisibility('openai')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   >
-                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    <option value="gpt-4">GPT-4</option>
-                    <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-                    <option value="gpt-4o">GPT-4o</option>
-                  </select>
+                    <KeyIcon className="h-4 w-4 text-gray-400" />
+                  </button>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Default Temperature
-                  </label>
-                  <input
+                  <Select
+                    label="Model"
+                    value={settings.openaiModel}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleInputChange('openaiModel', e.target.value)}
+                    options={[
+                      { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+                      { value: 'gpt-4', label: 'GPT-4' },
+                      { value: 'gpt-4-turbo-preview', label: 'GPT-4 Turbo' },
+                      { value: 'gpt-4o', label: 'GPT-4o' }
+                    ]}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Default Temperature"
                     type="number"
                     min="0"
                     max="2"
                     step="0.1"
-                    value={settings.defaultTemperature}
-                    onChange={(e) => handleInputChange('defaultTemperature', parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                    value={settings.defaultTemperature.toString()}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('defaultTemperature', parseFloat(e.target.value))}
+                    className="text-gray-900 placeholder-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Default Max Tokens
-                  </label>
-                  <input
+                  <Input
+                    label="Default Max Tokens"
                     type="number"
                     min="1"
                     max="4000"
-                    value={settings.defaultMaxTokens}
-                    onChange={(e) => handleInputChange('defaultMaxTokens', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+                    value={settings.defaultMaxTokens.toString()}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('defaultMaxTokens', parseInt(e.target.value))}
+                    className="text-gray-900 placeholder-gray-400"
                   />
                 </div>
               </div>
               <div className="mt-4 flex items-center space-x-4">
-                <button
+                <Button
                   onClick={() => testConnection('openai')}
                   disabled={!settings.openaiApiKey || testingConnection === 'openai'}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  loading={testingConnection === 'openai'}
+                  className="flex items-center space-x-2"
                 >
-                  {testingConnection === 'openai' ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  ) : (
-                    <CheckCircleIcon className="h-4 w-4" />
-                  )}
+                  <CheckCircleIcon className="h-4 w-4" />
                   <span>Test Connection</span>
-                </button>
+                </Button>
                 {connectionStatus.openai === 'success' && (
                   <div className="flex items-center space-x-2 text-green-600">
                     <CheckCircleIcon className="h-5 w-5" />
@@ -328,37 +301,28 @@ export default function Settings() {
                 </button>
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* Integrations Tab */}
-        {activeTab === 'integrations' && (
-          <div className="space-y-6">
+          <TabsContent value="integrations" className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Webhook Configuration</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Webhook URL
-                  </label>
-                  <input
+                  <Input
+                    label="Webhook URL"
                     type="url"
                     value={settings.webhookUrl || ''}
-                    onChange={(e) => handleInputChange('webhookUrl', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('webhookUrl', e.target.value)}
                     placeholder="https://your-domain.com/webhook"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Webhook Secret
-                  </label>
-                  <input
+                  <Input
+                    label="Webhook Secret"
                     type="password"
                     value={settings.webhookSecret || ''}
-                    onChange={(e) => handleInputChange('webhookSecret', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('webhookSecret', e.target.value)}
                     placeholder="Your webhook secret key"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -369,37 +333,28 @@ export default function Settings() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Other AI Providers</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cohere API Key
-                  </label>
-                  <input
+                  <Input
+                    label="Cohere API Key"
                     type="password"
                     value={settings.cohereApiKey || ''}
-                    onChange={(e) => handleInputChange('cohereApiKey', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('cohereApiKey', e.target.value)}
                     placeholder="Your Cohere API key"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Hugging Face API Key
-                  </label>
-                  <input
+                  <Input
+                    label="Hugging Face API Key"
                     type="password"
                     value={settings.huggingFaceApiKey || ''}
-                    onChange={(e) => handleInputChange('huggingFaceApiKey', e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('huggingFaceApiKey', e.target.value)}
                     placeholder="Your Hugging Face API key"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* Security Tab */}
-        {activeTab === 'security' && (
-          <div className="space-y-6">
+          <TabsContent value="security" className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Security Settings</h3>
               <div className="space-y-4">
@@ -432,24 +387,21 @@ export default function Settings() {
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
 
-        {/* Save Button */}
-        <div className="flex justify-end mt-8">
-          <button
-            onClick={saveSettings}
-            disabled={saving}
-            className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-          >
-            {saving ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            ) : (
+          {/* Save Button */}
+          <div className="flex justify-end mt-8">
+            <Button
+              onClick={saveSettings}
+              disabled={saving}
+              loading={saving}
+              className="flex items-center space-x-2"
+            >
               <CheckCircleIcon className="h-4 w-4" />
-            )}
-            <span>{saving ? 'Saving...' : 'Save Settings'}</span>
-          </button>
-        </div>
+              <span>Save Settings</span>
+            </Button>
+          </div>
+        </Tabs>
       </div>
     </DashboardLayout>
   );

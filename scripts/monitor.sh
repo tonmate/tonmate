@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Customer Support AI Agent - Monitoring Script
+# Tonmate - Monitoring Script
 # This script monitors application health and sends alerts
 
 set -e
@@ -106,7 +106,7 @@ send_slack_notification() {
     "attachments": [
         {
             "color": "$color",
-            "title": "$icon Customer Support AI Agent Alert",
+            "title": "$icon Tonmate Alert",
             "text": "$message",
             "ts": $(date +%s)
         }
@@ -127,7 +127,7 @@ send_email_notification() {
     local message=$2
     
     if [ -n "$EMAIL_NOTIFICATION" ] && command -v mail >/dev/null 2>&1; then
-        echo "$message" | mail -s "[$level] Customer Support AI Agent Alert" "$EMAIL_NOTIFICATION"
+        echo "$message" | mail -s "[$level] Tonmate Alert" "$EMAIL_NOTIFICATION"
     fi
 }
 
@@ -152,7 +152,7 @@ send_discord_notification() {
 {
     "embeds": [
         {
-            "title": "Customer Support AI Agent Alert",
+            "title": "Tonmate Alert",
             "description": "$message",
             "color": $color,
             "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"

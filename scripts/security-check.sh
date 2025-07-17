@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Customer Support AI Agent - Security Check Script
+# Tonmate - Security Check Script
 # This script performs comprehensive security checks
 
 set -e

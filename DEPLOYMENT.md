@@ -1,8 +1,8 @@
-# Deployment Guide - Customer Support AI Agent
+# Deployment Guide - Tonmate
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying the Customer Support AI Agent platform to production environments. The platform supports multiple deployment strategies including Docker, Vercel, and traditional server deployment.
+This guide provides comprehensive instructions for deploying the Tonmate platform to production environments. The platform supports multiple deployment strategies including Docker, Vercel, and traditional server deployment.
 
 ## Prerequisites
 
@@ -522,4 +522,4 @@ Set up alerts for:
 
 ---
 
-*This deployment guide is for Customer Support AI Agent v1.0.0. For updates and additional information, see the project repository.*
+*This deployment guide is for Tonmate v1.0.0. For updates and additional information, see the project repository.*

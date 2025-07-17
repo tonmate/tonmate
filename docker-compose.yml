@@ -1,20 +1,19 @@
 version: '3.8'
 
 services:
-  # Customer Support AI Agent Application
+  # Tonmate AI Customer Support Platform
   app:
     build: .
-    container_name: customer-support-ai-agent
+    container_name: tonmate-app
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/customer_support_ai
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/tonmate
       - NEXTAUTH_URL=http://localhost:3000
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - JWT_SECRET=${JWT_SECRET}
       - LOG_LEVEL=info
       - RATE_LIMIT_ENABLED=true
     depends_on:
@@ -37,9 +36,9 @@ services:
   # PostgreSQL Database
   db:
     image: postgres:15-alpine
-    container_name: customer-support-ai-db
+    container_name: tonmate-db
     environment:
-      - POSTGRES_DB=customer_support_ai
+      - POSTGRES_DB=tonmate
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     volumes:
@@ -59,7 +58,7 @@ services:
   # Redis Cache (Optional)
   redis:
     image: redis:7-alpine
-    container_name: customer-support-ai-redis
+    container_name: tonmate-redis
     ports:
       - "6379:6379"
     volumes:

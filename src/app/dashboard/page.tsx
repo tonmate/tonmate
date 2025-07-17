@@ -5,6 +5,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '../../components/Layout/DashboardLayout';
+import { CreateAgentModal } from '../../components/ui/CreateAgentModal';
 import { PlusIcon, ChatBubbleLeftIcon, DocumentTextIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 interface Agent {
@@ -66,14 +67,7 @@ export default function Dashboard() {
     url: '',
     type: 'website' as const
   });
-  const [newAgent, setNewAgent] = useState({
-    name: '',
-    description: '',
-    prompt: 'You are a helpful customer support agent.',
-    greeting: 'Hello! How can I help you today?',
-    temperature: 0.7,
-    llmProvider: 'openai'
-  });
+  const [creatingAgent, setCreatingAgent] = useState(false);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -133,34 +127,52 @@ export default function Dashboard() {
     }
   };
 
-  const createAgent = async () => {
+  const createAgent = async (agentData: any) => {
+    setCreatingAgent(true);
     try {
+      // Transform the enhanced data structure to match the API
+      const agentPayload = {
+        name: agentData.name,
+        description: agentData.description,
+        prompt: agentData.prompt,
+        greeting: agentData.greeting,
+        temperature: agentData.temperature,
+        llmProvider: agentData.llmProvider,
+        model: agentData.model,
+        maxTokens: agentData.maxTokens,
+        // Store additional settings as JSON
+        settings: {
+          persona: agentData.persona,
+          capabilities: agentData.capabilities,
+          crawlerSettings: agentData.crawlerSettings,
+          enableKnowledgeBase: agentData.enableKnowledgeBase,
+        },
+      };
+
       const response = await fetch('/api/agents', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(newAgent),
+        body: JSON.stringify(agentPayload),
       });
 
       if (response.ok) {
         const agent = await response.json();
         setAgents([agent, ...agents]);
         setShowCreateModal(false);
-        setNewAgent({
-          name: '',
-          description: '',
-          prompt: 'You are a helpful customer support agent.',
-          greeting: 'Hello! How can I help you today?',
-          temperature: 0.7,
-          llmProvider: 'openai'
-        });
+        
+        // Show success message
+        alert(`✅ Agent "${agent.name}" created successfully!`);
       } else {
-        alert('Failed to create agent');
+        const error = await response.json();
+        alert(`❌ Failed to create agent: ${error.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error creating agent:', error);
-      alert('Error creating agent');
+      alert('❌ Error creating agent');
+    } finally {
+      setCreatingAgent(false);
     }
   };
 
@@ -484,66 +496,12 @@ export default function Dashboard() {
         )}
 
         {/* Create Agent Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Agent</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <input
-                    type="text"
-                    value={newAgent.name}
-                    onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="e.g., Customer Support Bot"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <textarea
-                    value={newAgent.description}
-                    onChange={(e) => setNewAgent({...newAgent, description: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    rows={3}
-                    placeholder="Brief description of what this agent does..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Greeting Message</label>
-                  <input
-                    type="text"
-                    value={newAgent.greeting}
-                    onChange={(e) => setNewAgent({...newAgent, greeting: e.target.value})}
-                    className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
-                    placeholder="Hello! How can I help you today?"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex items-center justify-end space-x-3 mt-6">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={createAgent}
-                  disabled={!newAgent.name.trim()}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 rounded-md"
-                >
-                  Create Agent
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <CreateAgentModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={createAgent}
+          loading={creatingAgent}
+        />
 
       {/* Create Knowledge Source Modal */}
       {showKnowledgeModal && (

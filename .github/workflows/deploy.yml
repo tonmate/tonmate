@@ -1,4 +1,4 @@
-name: Deploy Customer Support AI Agent
+name: Deploy Tonmate
 
 on:
   push:

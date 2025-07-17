@@ -2,7 +2,7 @@
 
 /**
  * Environment Variable Validation Script
- * Validates required environment variables for the Customer Support AI Agent
+ * Validates required environment variables for Tonmate
  */
 
 const fs = require('fs');

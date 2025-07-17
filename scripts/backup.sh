@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Customer Support AI Agent - Backup Script
+# Tonmate - Backup Script
 # This script creates comprehensive backups of the application
 
 set -e  # Exit on any error
@@ -303,7 +303,7 @@ send_notification() {
     
     # Email notification (if configured)
     if [ -n "$EMAIL_NOTIFICATION" ] && command -v mail >/dev/null 2>&1; then
-        echo "$message" | mail -s "Backup $status - Customer Support AI Agent" "$EMAIL_NOTIFICATION"
+        echo "$message" | mail -s "Backup $status - Tonmate" "$EMAIL_NOTIFICATION"
     fi
 }
 

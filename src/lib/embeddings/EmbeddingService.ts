@@ -9,6 +9,9 @@ export interface DocumentChunk {
     chunkIndex: number;
     totalChunks: number;
     wordCount: number;
+    isStructured?: boolean;
+    structuredType?: 'heading' | 'paragraph' | 'list' | 'table' | 'code' | 'mixed';
+    containsMarkdown?: boolean;
   };
 }
 
@@ -34,7 +37,133 @@ export class EmbeddingService {
   }
 
   /**
-   * Split text into chunks for embedding
+   * Split structured content into intelligent chunks for embedding
+   */
+  chunkStructuredContent(content: string, structuredContent: any, url: string, title: string): DocumentChunk[] {
+    const chunks: DocumentChunk[] = [];
+    
+    if (structuredContent) {
+      // Process headings with their content
+      structuredContent.headings.forEach((heading: any, index: number) => {
+        if (heading.content && heading.content.trim()) {
+          chunks.push({
+            content: `${heading.level} ${heading.content}`,
+            metadata: {
+              url,
+              title,
+              chunkIndex: chunks.length,
+              totalChunks: 0,
+              wordCount: heading.content.split(/\s+/).length,
+              isStructured: true,
+              structuredType: 'heading'
+            }
+          });
+        }
+      });
+      
+      // Process paragraphs
+      structuredContent.paragraphs.forEach((paragraph: any) => {
+        if (paragraph.content && paragraph.content.trim()) {
+          chunks.push({
+            content: paragraph.content,
+            metadata: {
+              url,
+              title,
+              chunkIndex: chunks.length,
+              totalChunks: 0,
+              wordCount: paragraph.content.split(/\s+/).length,
+              isStructured: true,
+              structuredType: 'paragraph'
+            }
+          });
+        }
+      });
+      
+      // Process lists
+      structuredContent.lists.forEach((list: any) => {
+        if (list.items && list.items.length > 0) {
+          const listContent = list.items.map((item: any) => `• ${item.content}`).join('\n');
+          chunks.push({
+            content: listContent,
+            metadata: {
+              url,
+              title,
+              chunkIndex: chunks.length,
+              totalChunks: 0,
+              wordCount: listContent.split(/\s+/).length,
+              isStructured: true,
+              structuredType: 'list'
+            }
+          });
+        }
+      });
+      
+      // Process tables
+      structuredContent.tables.forEach((table: any) => {
+        if (table.rows && table.rows.length > 0) {
+          const tableContent = table.rows
+            .filter((row: any) => row && row.cells && Array.isArray(row.cells))
+            .map((row: any) => 
+              row.cells
+                .filter((cell: any) => cell && cell.content)
+                .map((cell: any) => cell.content)
+                .join(' | ')
+            )
+            .filter((rowContent: string) => rowContent.trim().length > 0)
+            .join('\n');
+          
+          // Only create chunk if table has actual content
+          if (tableContent.trim().length > 0) {
+            chunks.push({
+              content: tableContent,
+              metadata: {
+                url,
+                title,
+                chunkIndex: chunks.length,
+                totalChunks: 0,
+                wordCount: tableContent.split(/\s+/).length,
+                isStructured: true,
+                structuredType: 'table'
+              }
+            });
+          }
+        }
+      });
+      
+      // Process code blocks
+      structuredContent.codeBlocks.forEach((codeBlock: any) => {
+        if (codeBlock.content && codeBlock.content.trim()) {
+          chunks.push({
+            content: `Code (${codeBlock.language || 'unknown'}):\n${codeBlock.content}`,
+            metadata: {
+              url,
+              title,
+              chunkIndex: chunks.length,
+              totalChunks: 0,
+              wordCount: codeBlock.content.split(/\s+/).length,
+              isStructured: true,
+              structuredType: 'code'
+            }
+          });
+        }
+      });
+    }
+    
+    // If no structured content was processed, fall back to regular text chunking
+    if (chunks.length === 0) {
+      return this.chunkText(content, url, title);
+    }
+    
+    // Update totalChunks for all chunks
+    chunks.forEach(chunk => {
+      chunk.metadata.totalChunks = chunks.length;
+    });
+    
+    return chunks;
+  }
+  
+  /**
+   * Split text into chunks for embedding (fallback method)
    */
   chunkText(text: string, url: string, title: string): DocumentChunk[] {
     const chunks: DocumentChunk[] = [];
@@ -56,7 +185,9 @@ export class EmbeddingService {
             title,
             chunkIndex: chunks.length,
             totalChunks: 0, // Will be updated later
-            wordCount: currentWordCount
+            wordCount: currentWordCount,
+            isStructured: false,
+            structuredType: 'mixed'
           }
         });
         
@@ -80,7 +211,9 @@ export class EmbeddingService {
           title,
           chunkIndex: chunks.length,
           totalChunks: 0,
-          wordCount: currentWordCount
+          wordCount: currentWordCount,
+          isStructured: false,
+          structuredType: 'mixed'
         }
       });
     }

@@ -82,6 +82,16 @@ async function getUserAgent(userId: string, agentId?: string) {
     });
 
     // Prepare knowledge base from documents
+    console.log(`🔍 DEBUG: Agent config knowledge sources:`, agentConfig.knowledgeSources?.length || 0);
+    agentConfig.knowledgeSources?.forEach((source, index) => {
+      console.log(`📚 DEBUG: Knowledge source ${index + 1}:`, {
+        id: source.id,
+        name: source.name,
+        type: source.type,
+        documentsCount: source.documents?.length || 0
+      });
+    });
+    
     const knowledgeBase = agentConfig.knowledgeSources?.flatMap(source => 
       source.documents?.map(doc => ({
         title: doc.title,
@@ -90,6 +100,15 @@ async function getUserAgent(userId: string, agentId?: string) {
         sourceType: source.type || 'website'
       })) || []
     ) || [];
+    
+    console.log(`💾 DEBUG: Final knowledge base size: ${knowledgeBase.length}`);
+    if (knowledgeBase.length > 0) {
+      console.log(`📄 DEBUG: Sample documents:`, knowledgeBase.slice(0, 3).map(doc => ({
+        title: doc.title,
+        url: doc.url,
+        contentLength: doc.content.length
+      })));
+    }
 
     // Initialize agent with knowledge base (sessionId is different from agentId)
     await agent.initialize(knowledgeBase, [], null);

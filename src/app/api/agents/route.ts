@@ -53,7 +53,10 @@ export async function POST(request: NextRequest) {
       prompt,
       greeting,
       temperature = 0.7,
-      llmProvider = 'openai'
+      llmProvider = 'openai',
+      model = 'gpt-4',
+      maxTokens = 2000,
+      settings = {}
     } = body;
 
     // Validate required fields
@@ -73,7 +76,10 @@ export async function POST(request: NextRequest) {
         prompt: prompt?.trim() || 'You are a helpful customer support agent.',
         greeting: greeting?.trim() || 'Hello! How can I help you today?',
         temperature: Math.max(0, Math.min(1, temperature)), // Ensure between 0-1
-        llmProvider
+        llmProvider,
+        model: model || 'gpt-4',
+        maxTokens: Math.max(100, Math.min(8000, maxTokens || 2000)), // Ensure reasonable token limits
+        settings: settings ? JSON.stringify(settings) : null
       },
       include: {
         knowledgeSources: true

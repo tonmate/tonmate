@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type TabType = 'overview' | 'configuration' | 'knowledge' | 'conversations' | 'playground' | 'analytics' | 'developer';
+export type TabType = 'overview' | 'configuration' | 'knowledge' | 'conversations' | 'playground' | 'developer';
 
 interface SidebarNavigationProps {
   activeTab: TabType;
@@ -19,7 +19,6 @@ const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     { id: 'knowledge' as TabType, label: 'Knowledge Sources', icon: '📚' },
     { id: 'conversations' as TabType, label: 'Recent Conversations', icon: '💬' },
     { id: 'playground' as TabType, label: 'AI Playground', icon: '🎮' },
-    { id: 'analytics' as TabType, label: 'Usage Analytics', icon: '📈' },
     { id: 'developer' as TabType, label: 'Developer Tools', icon: '⚡' }
   ];
 

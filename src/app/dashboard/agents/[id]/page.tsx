@@ -10,7 +10,7 @@ import KnowledgeSourcesTab from '../../../../components/AgentDetails/KnowledgeSo
 import ConversationsTab from '../../../../components/AgentDetails/ConversationsTab';
 import SidebarNavigation, { TabType } from '../../../../components/AgentDetails/SidebarNavigation';
 import Playground from '../../../../components/Playground';
-import UsageAnalytics from '../../../../components/sidebar-pages/UsageAnalytics';
+// Removed UsageAnalytics import - analytics moved to main dashboard only
 import DeveloperTools from '../../../../components/sidebar-pages/DeveloperTools';
 
 interface Agent {
@@ -288,9 +288,7 @@ export default function AgentDetailsPage() {
               </div>
             )}
 
-            {activeTab === 'analytics' && (
-              <UsageAnalytics />
-            )}
+            {/* Analytics tab removed - analytics moved to main dashboard only */}
 
             {activeTab === 'developer' && (
               <DeveloperTools />

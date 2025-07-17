@@ -8,6 +8,8 @@ import { useSession, signOut } from 'next-auth/react';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: '🏠' },
   { name: 'Usage & Analytics', href: '/usage', icon: '📊' },
+  { name: 'AI Model Integrations', href: '/integrations', icon: '🤖' },
+  { name: 'Crawler Settings', href: '/crawler-settings', icon: '🕷️' },
   { name: 'Settings', href: '/settings', icon: '⚙️' },
 ];
 
