@@ -7,27 +7,38 @@ import Link from 'next/link';
 
 interface Message {
   id: string;
-  text: string;
-  sender: 'user' | 'agent';
+  type: 'user' | 'bot';
+  content: string;
   timestamp: Date;
 }
 
 interface Agent {
   id: string;
   name: string;
-  greeting: string;
-  prompt: string;
+  description?: string;
+  greeting?: string;
+  prompt?: string;
 }
 
-export default async function AgentChatPage({ params }: { params: Promise<{ id: string }> }) {
+interface Conversation {
+  id: string;
+  sessionId: string;
+  agentId: string;
+  messages: Message[];
+  createdAt: string;
+  updatedAt: string;
+  agent: Agent;
+}
+
+export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [agent, setAgent] = useState<Agent | null>(null);
+  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [agentLoading, setAgentLoading] = useState(true);
+  const [conversationLoading, setConversationLoading] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,31 +49,33 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
 
   useEffect(() => {
     if (session?.user?.id && id) {
-      fetchAgent();
+      fetchConversation();
     }
   }, [session, id]);
 
-  const fetchAgent = async () => {
+  const fetchConversation = async () => {
     try {
-      const response = await fetch(`/api/agents/${id}`);
+      const response = await fetch(`/api/conversations/${id}`);
       if (response.ok) {
-        const agentData = await response.json();
-        setAgent(agentData);
+        const conversationData = await response.json();
+        setConversation(conversationData);
         
-        // Set initial greeting message
-        setMessages([{
-          id: '1',
-          text: agentData.greeting || 'Hello! How can I help you today?',
-          sender: 'agent',
-          timestamp: new Date()
-        }]);
+        // Convert messages to proper format
+        const formattedMessages = conversationData.messages.map((msg: any) => ({
+          id: msg.id,
+          type: msg.type,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp)
+        }));
+        
+        setMessages(formattedMessages);
       } else if (response.status === 404) {
         router.push('/dashboard');
       }
     } catch (error) {
-      console.error('Error fetching agent:', error);
+      console.error('Error fetching conversation:', error);
     } finally {
-      setAgentLoading(false);
+      setConversationLoading(false);
     }
   };
 
@@ -75,12 +88,12 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
   }, [messages]);
 
   const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading || !agent) return;
+    if (!inputMessage.trim() || isLoading || !conversation) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputMessage,
-      sender: 'user',
+      type: 'user',
+      content: inputMessage,
       timestamp: new Date()
     };
 
@@ -96,8 +109,9 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
         },
         body: JSON.stringify({
           message: inputMessage,
-          agentId: agent.id,
-          conversationId: `chat-${agent.id}-${Date.now()}`
+          userId: session?.user?.id,
+          agentId: conversation.agent.id,
+          conversationId: conversation.id
         }),
       });
 
@@ -105,8 +119,8 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
         const data = await response.json();
         const agentMessage: Message = {
           id: (Date.now() + 1).toString(),
-          text: data.message,
-          sender: 'agent',
+          type: 'bot',
+          content: data.response,
           timestamp: new Date()
         };
         setMessages(prev => [...prev, agentMessage]);
@@ -117,8 +131,8 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
       console.error('Error sending message:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Sorry, I encountered an error. Please try again.',
-        sender: 'agent',
+        type: 'bot',
+        content: 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -134,7 +148,7 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
     }
   };
 
-  if (status === 'loading' || agentLoading) {
+  if (status === 'loading' || conversationLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -145,11 +159,11 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  if (!agent) {
+  if (!conversation) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-600 text-lg font-medium mb-4">Agent not found</div>
+          <div className="text-red-600 text-lg font-medium mb-4">Conversation not found</div>
           <Link 
             href="/dashboard" 
             className="text-blue-600 hover:text-blue-500 font-medium"
@@ -175,7 +189,7 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
                 ← Dashboard
               </Link>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Chat with {agent.name}</h1>
+                <h1 className="text-xl font-semibold text-gray-900">Chat with {conversation.agent.name}</h1>
                 <p className="text-sm text-gray-500">AI Customer Support Agent</p>
               </div>
             </div>
@@ -195,19 +209,19 @@ export default async function AgentChatPage({ params }: { params: Promise<{ id: 
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
                   className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
-                    message.sender === 'user'
+                    message.type === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-900'
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.text}</p>
+                  <p className="whitespace-pre-wrap">{message.content}</p>
                   <p
                     className={`text-xs mt-1 ${
-                      message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                      message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
                     }`}
                   >
                     {message.timestamp.toLocaleTimeString([], {

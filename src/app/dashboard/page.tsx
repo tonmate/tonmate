@@ -34,10 +34,25 @@ interface KnowledgeSource {
   };
 }
 
+interface Conversation {
+  id: string;
+  sessionId: string;
+  agentId: string;
+  messages: any[];
+  createdAt: string;
+  updatedAt: string;
+  agent: {
+    id: string;
+    name: string;
+    description?: string;
+  };
+}
+
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -69,6 +84,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (session?.user?.id) {
       fetchAgents();
+      fetchConversations();
     }
   }, [session]);
 
@@ -102,6 +118,18 @@ export default function Dashboard() {
       console.error('Error fetching agents:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const response = await fetch('/api/conversations');
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data.slice(0, 5)); // Show last 5 conversations
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
     }
   };
 
@@ -144,6 +172,7 @@ export default function Dashboard() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           maxPages: 10,
           maxDepth: 2,
@@ -386,15 +415,7 @@ export default function Dashboard() {
                                   <div className="text-xs text-gray-500 truncate">{source.url}</div>
                                 )}
                               </div>
-                              {source.url && source.status !== 'processing' && (
-                                <button
-                                  onClick={() => processKnowledgeSource(source.id)}
-                                  disabled={processingKnowledge === source.id}
-                                  className="ml-2 px-3 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {processingKnowledge === source.id ? 'Processing...' : 'Process'}
-                                </button>
-                              )}
+                              {/* Processing now happens automatically when knowledge source is created */}
                             </div>
                           ))}
                         </div>
@@ -406,6 +427,59 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Recent Conversations */}
+        {conversations.length > 0 && (
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Recent Conversations</h2>
+                <p className="text-gray-600">Your latest chat sessions</p>
+              </div>
+              <Link 
+                href="/conversations" 
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View all conversations →
+              </Link>
+            </div>
+            <div className="grid gap-4">
+              {conversations.map((conversation) => {
+                const lastMessage = conversation.messages[conversation.messages.length - 1];
+                const messageCount = conversation.messages.length;
+                const lastActivity = new Date(conversation.updatedAt).toLocaleDateString();
+                
+                return (
+                  <div key={conversation.id} className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-shadow p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <ChatBubbleLeftIcon className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-900">{conversation.agent.name}</span>
+                          <span className="text-xs text-gray-500">•</span>
+                          <span className="text-xs text-gray-500">{messageCount} messages</span>
+                          <span className="text-xs text-gray-500">•</span>
+                          <span className="text-xs text-gray-500">{lastActivity}</span>
+                        </div>
+                        {lastMessage && (
+                          <p className="text-sm text-gray-600 line-clamp-2">
+                            {lastMessage.type === 'user' ? 'You: ' : ''}{lastMessage.content}
+                          </p>
+                        )}
+                      </div>
+                      <Link 
+                        href={`/chat/${conversation.id}`}
+                        className="ml-4 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Continue →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -502,7 +576,7 @@ export default function Dashboard() {
                 </div>
 
                 <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-md">
-                  <strong>Note:</strong> After creating the knowledge source, click the "Process" button to crawl the website and generate embeddings for AI training.
+                  <strong>Note:</strong> Website crawling and embedding generation will start automatically once the knowledge source is created.
                 </div>
               </div>
               

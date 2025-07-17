@@ -67,7 +67,9 @@ export default function AgentDetailsPage() {
   const fetchAgent = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/agents/${agentId}`);
+      const response = await fetch(`/api/agents/${agentId}`, {
+      credentials: 'include'
+    });
       if (!response.ok) {
         throw new Error('Failed to fetch agent');
       }
@@ -88,15 +90,30 @@ export default function AgentDetailsPage() {
   // Handle knowledge source processing
   const processKnowledgeSource = async (sourceId: string) => {
     try {
+      console.log('🔍 Session before API call:', session);
       setProcessingKnowledge(prev => new Set(prev).add(sourceId));
       
       const response = await fetch(`/api/knowledge-sources/${sourceId}/process`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          maxPages: 10,
+          maxDepth: 2,
+          generateEmbeddings: true
+        })
       });
       
       if (!response.ok) {
-        throw new Error('Failed to process knowledge source');
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('❌ API Error:', { status: response.status, error: errorData });
+        throw new Error(`Failed to process knowledge source: ${errorData.error || response.statusText}`);
       }
+      
+      const result = await response.json();
+      console.log('✅ API Success:', result);
       
       // Refresh agent data to get updated status
       await fetchAgent();

@@ -103,7 +103,7 @@ async function getUserAgent(userId: string, agentId?: string) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, userId, agentId, chatHistory = [] } = body;
+    const { message, userId, agentId, conversationId, chatHistory = [] } = body;
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -129,6 +129,39 @@ export async function POST(request: NextRequest) {
     // Get agent and process message
     const supportAgent = await getUserAgent(userId, agentId);
     const result = await supportAgent.processMessage(message, chatHistory);
+
+    // Save message to conversation if conversationId is provided
+    if (conversationId) {
+      try {
+        const conversation = await prisma.conversation.findUnique({
+          where: { id: conversationId }
+        });
+
+        if (conversation) {
+          const existingMessages = Array.isArray(conversation.messages) ? conversation.messages : [];
+          const newMessages = [
+            ...existingMessages,
+            {
+              id: Date.now().toString(),
+              type: 'bot',
+              content: result.response,
+              timestamp: new Date()
+            }
+          ];
+
+          await prisma.conversation.update({
+            where: { id: conversationId },
+            data: {
+              messages: newMessages,
+              updatedAt: new Date()
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error saving message to conversation:', error);
+        // Don't fail the request if saving fails
+      }
+    }
 
     return NextResponse.json(result);
   } catch (error) {

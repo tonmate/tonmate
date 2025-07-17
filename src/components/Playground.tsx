@@ -38,6 +38,7 @@ export default function Playground({ agent, onClose }: PlaygroundProps) {
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(1000);
   const [showSettings, setShowSettings] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -81,6 +82,29 @@ export default function Playground({ agent, onClose }: PlaygroundProps) {
     setIsLoading(true);
 
     try {
+      // Create conversation on first message or use existing one
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        const sessionId = `playground_${agent.id}_${Date.now()}`;
+        const createResponse = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            agentId: agent.id,
+            sessionId,
+            initialMessage: inputValue
+          }),
+        });
+        
+        if (createResponse.ok) {
+          const convData = await createResponse.json();
+          currentConversationId = convData.id;
+          setConversationId(currentConversationId);
+        }
+      }
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -90,6 +114,7 @@ export default function Playground({ agent, onClose }: PlaygroundProps) {
           message: inputValue,
           userId: session.user.id,
           agentId: agent.id,
+          conversationId: currentConversationId,
           temperature,
           maxTokens
         }),

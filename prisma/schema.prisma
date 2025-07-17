@@ -70,6 +70,10 @@ model User {
   // API Keys
   apiKeys       ApiKey[]
   
+  // Web crawling
+  crawlRequests CrawlRequest[]
+  knowledgeBases KnowledgeBase[]
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -128,7 +132,7 @@ model Document {
   content         String
   url             String?  // Original URL if from web crawling
   wordCount       Int?
-  embedding       Json?    // Vector embeddings for semantic search
+  embedding       String?  @default("null") // Vector embeddings for semantic search (JSON as string)
   
   // Relations
   source          KnowledgeSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
@@ -176,4 +180,98 @@ model ApiKey {
   lastUsed  DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// Web Crawling Models
+model CrawlRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  url             String
+  status          String   @default("pending") // "pending", "running", "completed", "failed", "stopped"
+  progress        Float    @default(0)
+  totalPages      Int      @default(0)
+  completedPages  Int      @default(0)
+  error           String?
+  
+  // Crawl Options
+  maxDepth        Int      @default(2)
+  pageLimit       Int      @default(50)
+  allowedDomains  String   @default("[]")
+  excludePaths    String   @default("[]")
+  includePaths    String   @default("[]")
+  respectRobotsTxt Boolean @default(true)
+  delayBetweenRequests Int @default(1000)
+  
+  // Page Options
+  excludeTags     String   @default("[]")
+  includeTags     String   @default("[]")
+  waitTime        Int      @default(0)
+  includeHtml     Boolean  @default(false)
+  onlyMainContent Boolean  @default(true)
+  includeLinks    Boolean  @default(false)
+  timeout         Int      @default(15000)
+  extraHeaders    String   @default("{}")
+  
+  // Relations
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pages           CrawledPage[]
+  knowledgeBases  KnowledgeBase[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+}
+
+model CrawledPage {
+  id              String   @id @default(cuid())
+  crawlRequestId  String
+  url             String
+  title           String
+  content         String
+  htmlContent     String?
+  metadata        String   @default("{}")
+  links           String   @default("[]")
+  depth           Int
+  status          String   @default("success") // "success", "failed"
+  error           String?
+  
+  // Relations
+  crawlRequest    CrawlRequest     @relation(fields: [crawlRequestId], references: [id], onDelete: Cascade)
+  knowledgeChunks KnowledgeChunk[]
+  
+  createdAt       DateTime @default(now())
+}
+
+model KnowledgeBase {
+  id              String   @id @default(cuid())
+  userId          String
+  name            String
+  description     String?
+  crawlRequestId  String
+  vectorized      Boolean  @default(false)
+  totalChunks     Int      @default(0)
+  
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  crawlRequest    CrawlRequest     @relation(fields: [crawlRequestId], references: [id], onDelete: Cascade)
+  chunks          KnowledgeChunk[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model KnowledgeChunk {
+  id              String   @id @default(cuid())
+  knowledgeBaseId String
+  pageId          String
+  content         String
+  metadata        String   @default("{}")
+  embedding       String?  // Vector embedding for semantic search
+  chunkIndex      Int
+  
+  // Relations
+  knowledgeBase   KnowledgeBase @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  page            CrawledPage   @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
 }

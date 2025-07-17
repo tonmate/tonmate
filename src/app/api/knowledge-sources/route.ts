@@ -48,10 +48,28 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    // Knowledge source created, processing will be triggered separately via /process endpoint
+    // Automatically start processing in background
+    const { KnowledgeProcessor } = await import('../../../lib/knowledge/KnowledgeProcessor');
+    const processor = new KnowledgeProcessor(session.user.id);
+    
+    // Process asynchronously (don't await to avoid blocking the response)
+    processor.processWebsite(knowledgeSource.id, url.trim(), {
+      maxPages: 10,
+      maxDepth: maxDepth || 2,
+      generateEmbeddings: true
+    }).catch(async (error) => {
+      console.error('❌ Auto-processing failed:', error);
+      
+      // Update status to failed
+      await prisma.knowledgeSource.update({
+        where: { id: knowledgeSource.id },
+        data: { status: 'failed' }
+      });
+    });
+
     return NextResponse.json({
       ...knowledgeSource,
-      message: 'Knowledge source created. Use the /process endpoint to start crawling and embedding.'
+      message: 'Knowledge source created and processing started automatically.'
     });
   } catch (error) {
     console.error('Error creating knowledge source:', error);

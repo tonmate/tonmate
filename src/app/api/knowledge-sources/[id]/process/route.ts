@@ -52,13 +52,39 @@ export async function POST(
     // Start processing in background (don't await)
     const processor = new KnowledgeProcessor(session.user.id);
     
-    // Process asynchronously
+    // Process asynchronously with detailed error handling
     processor.processWebsite(id, knowledgeSource.url, {
       maxPages,
       maxDepth,
       generateEmbeddings
-    }).catch(error => {
-      console.error('Background processing failed:', error);
+    }).catch(async (error) => {
+      console.error('❌ Background processing failed:', error);
+      console.error('Error stack:', error.stack);
+      
+      // Update knowledge source status to failed
+      try {
+        await prisma.knowledgeSource.update({
+          where: { id: id },
+          data: { status: 'failed' }
+        });
+        
+        // Log the error to processing logs
+        await prisma.processingLog.create({
+          data: {
+            knowledgeSourceId: id,
+            level: 'error',
+            message: 'Background processing failed: ' + error.message,
+            details: JSON.stringify({
+              error: error.message,
+              stack: error.stack,
+              url: knowledgeSource.url,
+              options: { maxPages, maxDepth, generateEmbeddings }
+            })
+          }
+        });
+      } catch (dbError) {
+        console.error('❌ Failed to update database after processing error:', dbError);
+      }
     });
 
     return NextResponse.json({
