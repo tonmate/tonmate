@@ -149,7 +149,7 @@ Contributors are recognized in:
 ### Prerequisites
 - Node.js 20.x or later
 - npm or yarn
-- PostgreSQL (for production) or SQLite (for development)
+- PostgreSQL (required for both production and development)
 - Docker (optional, for containerized development)
 
 ### Environment Variables

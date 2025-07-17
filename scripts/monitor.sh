@@ -260,13 +260,14 @@ check_database() {
             return 1
         fi
     elif [[ $DATABASE_URL == file:* ]]; then
-        # SQLite check
+        # SQLite check (DEPRECATED)
+        log "WARNING" "SQLite usage is deprecated in Tonmate. Please migrate to PostgreSQL."
         local sqlite_file=${DATABASE_URL#file:}
         sqlite_file=${sqlite_file#./}
         
         if [ -f "$sqlite_file" ]; then
             if sqlite3 "$sqlite_file" "SELECT 1;" > /dev/null 2>&1; then
-                log "INFO" "Database connection successful"
+                log "INFO" "Database connection successful (using deprecated SQLite)"
             else
                 alert "CRITICAL" "Database connection failed"
                 return 1

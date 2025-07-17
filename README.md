@@ -148,7 +148,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Input Validation**: Comprehensive Zod schema validation
 
 ### Database & Infrastructure
-- **SQLite/PostgreSQL**: Flexible database options with full schema migrations
+- **PostgreSQL**: Production-ready database with full schema migrations
 - **Redis**: Caching and session storage for performance
 - **Vector Storage**: Efficient similarity search and embeddings with chunking
 - **Advanced Crawler**: Multi-threaded web crawling with content processing
@@ -161,7 +161,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 - Node.js 18.0.0 or higher
 - npm or yarn package manager
-- PostgreSQL 13+ or SQLite (for development)
+- PostgreSQL 13+
 - Redis (for production)
 - Docker (for containerized deployment)
 

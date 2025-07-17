@@ -7,7 +7,7 @@ This guide provides comprehensive instructions for deploying the Tonmate platfor
 ## Prerequisites
 
 - **Node.js**: Version 20.x or higher
-- **Database**: PostgreSQL 14+ (recommended) or SQLite for development
+- **Database**: PostgreSQL 14+ (required)
 - **Redis**: For caching and session storage (optional but recommended)
 - **Domain**: SSL certificate for HTTPS
 - **AI API Keys**: OpenAI, Anthropic, or Cohere
@@ -59,8 +59,8 @@ NEXTAUTH_URL=https://your-domain.com
 
 #### Database
 ```env
-# Development (SQLite)
-DATABASE_URL=file:./dev.db
+# Development (PostgreSQL)
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/tonmate
 
 # Production (PostgreSQL)
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname

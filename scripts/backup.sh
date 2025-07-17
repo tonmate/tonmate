@@ -71,7 +71,8 @@ backup_database() {
         log "Database backup completed: ${db_backup_file}.gz"
         
     elif [[ $DATABASE_URL == file:* ]]; then
-        # SQLite backup
+        # SQLite backup (DEPRECATED)
+        warning "WARNING: SQLite usage is deprecated. Please migrate to PostgreSQL."
         log "Backing up SQLite database..."
         local sqlite_file=${DATABASE_URL#file:}
         sqlite_file=${sqlite_file#./}

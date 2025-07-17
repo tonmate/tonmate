@@ -96,7 +96,7 @@ function validateEnvironment() {
 
   if (process.env.DATABASE_URL) {
     if (process.env.DATABASE_URL.startsWith('file:') && isProduction) {
-      warnings.push('Using SQLite in production is not recommended. Consider PostgreSQL.');
+      warnings.push('Using SQLite is deprecated and not recommended. Please switch to PostgreSQL.');
     }
   }
 
