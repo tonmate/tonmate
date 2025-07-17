@@ -1,25 +1,18 @@
-version: '3.8'
-
 services:
   # Production Application
   app:
     build: 
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
       target: runner
     container_name: tonmate
     ports:
       - "3000:3000"
+    env_file:
+      - ../.env
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/universal_ai_support
-      - NEXTAUTH_URL=${NEXTAUTH_URL}
-      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - COHERE_API_KEY=${COHERE_API_KEY}
-      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-      - JWT_SECRET=${JWT_SECRET}
+
       - LOG_LEVEL=info
       - RATE_LIMIT_ENABLED=true
       - RATE_LIMIT_MAX_REQUESTS=100

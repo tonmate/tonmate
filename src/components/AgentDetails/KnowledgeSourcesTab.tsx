@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
-import ProcessingLogsModal from '../agent-details/ProcessingLogsModal';
+import ProcessingLogsModal from './ProcessingLogsModal';
 
 interface KnowledgeSource {
   id: string;

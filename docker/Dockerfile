@@ -14,7 +14,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Install dependencies
-RUN npm ci --only=production --ignore-scripts
+RUN npm ci --omit=dev --ignore-scripts --legacy-peer-deps
 
 # Generate Prisma client
 RUN npx prisma generate
@@ -23,7 +23,7 @@ RUN npx prisma generate
 FROM base AS builder
 
 # Install all dependencies (including dev dependencies)
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --legacy-peer-deps
 
 # Copy source code
 COPY . .
