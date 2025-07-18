@@ -35,7 +35,7 @@ on:
 env:
   NODE_VERSION: '20.x'
   REGISTRY: ghcr.io
-  IMAGE_NAME: tonmate/tonmate
+  IMAGE_NAME: ${{ github.repository }}
 
 permissions:
   contents: write
@@ -138,8 +138,7 @@ jobs:
             @semantic-release/changelog@6.0.0
             @semantic-release/git@10.0.0
         env:
-          # Use PAT for private repository - fixes issue #3590
-          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Determine Docker tags
         id: vars
