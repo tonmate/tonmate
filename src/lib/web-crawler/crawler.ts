@@ -25,7 +25,7 @@ export class WebCrawler {
     const results: CrawledPage[] = [];
     this.queue.push({ url: startUrl, depth: 0 });
 
-    let robotsCache: Map<string, any> = new Map();
+    const robotsCache: Map<string, any> = new Map();
 
     while (this.queue.length > 0 && results.length < this.options.pageLimit) {
       if (this.abortController.signal.aborted) {
@@ -130,7 +130,7 @@ export class WebCrawler {
 
     // Extract content based on options
     let content = '';
-    let title = $('title').text().trim() || '';
+    const title = $('title').text().trim() || '';
 
     if (this.pageOptions.onlyMainContent) {
       // Try to extract main content area
