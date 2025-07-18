@@ -3,10 +3,9 @@ name: CI/CD Pipeline
 on:
   # Automatic triggers
   push:
-    branches: [ main, staging ]
-    tags: ['v*']
+    branches: [ main ]
   pull_request:
-    branches: [ main, staging ]
+    branches: [ main ]
   
   # Manual trigger
   workflow_dispatch:
@@ -23,10 +22,9 @@ on:
       environment:
         description: 'Environment to target'
         required: true
-        default: 'staging'
+        default: 'production'
         type: choice
         options:
-          - staging
           - production
       tag:
         description: 'Image tag to deploy'
@@ -109,7 +107,7 @@ jobs:
       success() &&
       github.event.inputs.action != 'deploy-only' && 
       github.event.inputs.action != 'migrations-only' && 
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || startsWith(github.ref, 'refs/tags/v'))
+      github.ref == 'refs/heads/main'
     
     steps:
       - name: Checkout repository
@@ -131,33 +129,52 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Determine tag and target environment
+      - name: Semantic Release
+        id: semantic
+        uses: cycjimmy/semantic-release-action@v4
+        with:
+          semantic_version: 19
+          extra_plugins: |
+            @semantic-release/changelog@6.0.0
+            @semantic-release/git@10.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Determine Docker tags
         id: vars
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            # Tag push
+          REGISTRY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          
+          if [ "${{ steps.semantic.outputs.new_release_published }}" == "true" ]; then
+            # New release was published by semantic release
             TARGET_ENV=production
-            TAG=${GITHUB_REF#refs/tags/}
-            echo "Building release: $TAG"
+            VERSION="${{ steps.semantic.outputs.new_release_version }}"
+            # Split version into parts (e.g., 1.2.3 -> 1.2.3, 1.2, 1)
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f1-2)
+            PATCH=$VERSION
+            
+            # Create multiple formatted tags
+            TAGS="${REGISTRY_IMAGE}:v${VERSION},${REGISTRY_IMAGE}:${PATCH},${REGISTRY_IMAGE}:${MINOR},${REGISTRY_IMAGE}:${MAJOR},${REGISTRY_IMAGE}:latest"
+            echo "🎉 New release: v$VERSION with tags: $TAGS"
+            echo "tags=$TAGS" >> $GITHUB_OUTPUT
           elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            # Main branch
+            # Main branch - production (no new release)
             TARGET_ENV=production
-            TAG=latest
-            echo "Building main branch: latest"
-          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
-            # Staging branch
-            TARGET_ENV=staging
-            TAG=staging
-            echo "Building staging branch: staging"
+            TAGS="${REGISTRY_IMAGE}:latest,${REGISTRY_IMAGE}:main"
+            echo "📦 Building main branch with tags: $TAGS"
+            echo "tags=$TAGS" >> $GITHUB_OUTPUT
           else
-            # Other branches (PRs)
+            # Other branches (PRs) - development
             TARGET_ENV=development
-            TAG=dev-${{ github.sha }}
-            echo "Building development: $TAG"
+            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+            TAGS="${REGISTRY_IMAGE}:dev-${SHORT_SHA},${REGISTRY_IMAGE}:dev-latest"
+            echo "🔧 Building development with tags: $TAGS"
+            echo "tags=$TAGS" >> $GITHUB_OUTPUT
           fi
           echo "target_env=$TARGET_ENV" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "Target Environment: $TARGET_ENV"
+          echo "new_release=${{ steps.semantic.outputs.new_release_published }}" >> $GITHUB_OUTPUT
+          echo "version=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -165,7 +182,7 @@ jobs:
           context: .
           file: docker/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}
+          tags: ${{ steps.vars.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
@@ -215,13 +232,13 @@ jobs:
   # Deploy stage runs after build for full pipeline or directly for deploy-only
   deploy:
     name: Deploy
-    # Needs build for full pipeline, but no dependencies for deploy-only
+    # For deploy-only, skip build dependency by using always()
     needs: [build]
     if: |
       (success() && github.event.inputs.action == 'full-pipeline') ||
-      github.event.inputs.action == 'deploy-only'
+      (always() && github.event.inputs.action == 'deploy-only')
     runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment || 'production' }}
     
     steps:
       - name: Setup SSH
@@ -303,7 +320,7 @@ jobs:
     name: Migrations
     runs-on: ubuntu-latest
     if: github.event.inputs.action == 'migrations-only'
-    environment: ${{ github.event.inputs.environment || 'staging' }}
+    environment: ${{ github.event.inputs.environment || 'production' }}
     
     steps:
       - name: Checkout repository
@@ -352,7 +369,7 @@ jobs:
           if [ "${{ github.event.inputs.environment }}" == "production" ]; then
             DB_NAME="tonmate_production"
           else
-            DB_NAME="tonmate_staging"
+            DB_NAME="tonmate_production"
           fi
           
           # Run migrations in a temporary container connected to the same network
