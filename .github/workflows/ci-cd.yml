@@ -1,13 +1,10 @@
 name: CI/CD Pipeline
 
 on:
-  # Automatic triggers
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
-  # Manual trigger (for migrations or special cases)
   workflow_dispatch:
     inputs:
       action:
@@ -45,280 +42,74 @@ permissions:
 
 jobs:
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: Run Tests
     if: github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
-    env:
+    uses: ./.github/workflows/test.yml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+    secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup test environment
-        run: |
-          cp environment.example .env.local
-          echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
-          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
-          echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
-          echo "JWT_SECRET=$JWT_SECRET" >> .env.local
-          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
-
-      - name: Generate Prisma client
-        run: npm run db:generate
-
-      - name: Run linting
-        run: npm run lint
-
-      - name: Run tests
-        run: npm test
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
   build:
-    name: Build
+    name: Build and Push Image
     needs: [test]
-    runs-on: ubuntu-latest
-    outputs:
-      new_release_published: ${{ steps.semantic.outputs.new_release_published }}
-      new_release_version: ${{ steps.semantic.outputs.new_release_version }}
-    permissions:
-      contents: write
-      packages: write
-      id-token: write
-      issues: write
-      pull-requests: write
     if: |
       success() &&
       github.event.inputs.action != 'deploy-only' && 
       github.event.inputs.action != 'migrations-only' && 
       (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Semantic Release
-        id: semantic
-        run: |
-          npx semantic-release
-          if git tag --sort=-version:refname | head -n 1 | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' > /dev/null; then
-            echo "new_release_published=true" >> $GITHUB_OUTPUT
-            echo "new_release_version=$(git tag --sort=-version:refname | head -n 1)" >> $GITHUB_OUTPUT
-          else
-            echo "new_release_published=false" >> $GITHUB_OUTPUT
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          DEBUG: semantic-release:*
-
-      - name: Determine Docker tags
-        id: vars
-        run: |
-          REGISTRY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          if [ "${{ steps.semantic.outputs.new_release_published }}" == "true" ]; then
-            TARGET_ENV=production
-            VERSION="${{ steps.semantic.outputs.new_release_version }}"
-            MAJOR=$(echo $VERSION | cut -d. -f1)
-            MINOR=$(echo $VERSION | cut -d. -f1-2)
-            PATCH=$VERSION
-            TAGS="${REGISTRY_IMAGE}:v${VERSION},${REGISTRY_IMAGE}:${PATCH},${REGISTRY_IMAGE}:${MINOR},${REGISTRY_IMAGE}:${MAJOR},${REGISTRY_IMAGE}:latest"
-            echo "tags=$TAGS" >> $GITHUB_OUTPUT
-          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            TARGET_ENV=production
-            TAGS="${REGISTRY_IMAGE}:latest,${REGISTRY_IMAGE}:main"
-            echo "tags=$TAGS" >> $GITHUB_OUTPUT
-          else
-            TARGET_ENV=development
-            SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
-            TAGS="${REGISTRY_IMAGE}:dev-${SHORT_SHA},${REGISTRY_IMAGE}:dev-latest"
-            echo "tags=$TAGS" >> $GITHUB_OUTPUT
-          fi
-          echo "target_env=$TARGET_ENV" >> $GITHUB_OUTPUT
-          echo "new_release=${{ steps.semantic.outputs.new_release_published }}" >> $GITHUB_OUTPUT
-          echo "version=${{ steps.semantic.outputs.new_release_version }}" >> $GITHUB_OUTPUT
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/Dockerfile
-          push: true
-          tags: ${{ steps.vars.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
-          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
-
-      - name: Output image details
-        run: |
-          echo "✅ Docker image built and pushed!"
-          echo "  Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}"
-          echo "  Environment: ${{ steps.vars.outputs.target_env }}"
+    uses: ./.github/workflows/build.yml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+      registry: ${{ env.REGISTRY }}
+      image-name: ${{ env.IMAGE_NAME }}
+      dockerfile-path: docker/Dockerfile
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   deploy:
-    name: Deploy
+    name: Deploy Application
     needs: [build]
-    runs-on: ubuntu-latest
-    # Automatically deploy after build on main branch or after manual trigger
     if: |
       (github.ref == 'refs/heads/main' && needs.build.result == 'success') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'deploy-only')
-    environment: ${{ github.event.inputs.environment || 'production' }}
-    steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set deployment tag
-        id: deploy-tag
-        run: |
-          DEPLOY_TAG="${{ needs.build.outputs.new_release_version || 'latest' }}"
-          echo "Using tag: $DEPLOY_TAG"
-          echo "tag=$DEPLOY_TAG" >> $GITHUB_OUTPUT
-
-      - name: Deploy to VPS
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          mkdir -p ~/tonmate
-          cat > ~/tonmate/docker-compose.yml << 'DOCKER_COMPOSE'
-          version: '3.8'
-
-          services:
-            app:
-              image: ghcr.io/tonmate/tonmate:${{ steps.deploy-tag.outputs.tag }}
-              container_name: tonmate-app
-              restart: unless-stopped
-              ports:
-                - "3000:3000"
-              environment:
-                - DATABASE_URL=${{ secrets.DATABASE_URL }}
-                - NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}
-                - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-                - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-                - JWT_SECRET=${{ secrets.JWT_SECRET }}
-                - ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
-                - NODE_ENV=production
-              depends_on:
-                - db
-            
-            db:
-              image: postgres:15-alpine
-              container_name: tonmate-db
-              restart: unless-stopped
-              environment:
-                - POSTGRES_DB=${{ secrets.POSTGRES_DB }}
-                - POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-                - POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-              volumes:
-                - postgres_data:/var/lib/postgresql/data
-              ports:
-                - "5432:5432"
-
-          volumes:
-            postgres_data:
-          DOCKER_COMPOSE
-
-          cd ~/tonmate
-          docker-compose pull
-          docker-compose up -d
-
-          echo "Deployment completed!"
-          EOF
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ github.event.inputs.environment || 'production' }}
+      tag: ${{ github.event.inputs.tag || needs.build.outputs.new_release_version || 'latest' }}
+      registry: ${{ env.REGISTRY }}
+      image-name: ${{ env.IMAGE_NAME }}
+      deployments-repo: "tonmate/deployments"
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   migrations:
-    name: Migrations
-    runs-on: ubuntu-latest
+    name: Run Database Migrations
     if: github.event.inputs.action == 'migrations-only'
-    environment: ${{ github.event.inputs.environment || 'production' }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate Prisma client
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: npm run db:generate
-
-      - name: Setup SSH for migrations
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Run migrations on DB
-        run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
-          cd ~/tonmate
-          NETWORK=$(docker network ls | grep tonmate | awk '{print $2}')
-          if [ -z "$NETWORK" ]; then
-            echo "❌ Error: Could not find Docker network for tonmate"
-            echo "Make sure the application is deployed before running migrations"
-            exit 1
-          fi
-          echo "Running database migrations on ${{ github.event.inputs.environment }} environment..."
-          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            DB_NAME="tonmate_production"
-          else
-            DB_NAME="tonmate_production"
-          fi
-          docker run --rm --network $NETWORK \
-            -e DATABASE_URL="postgresql://postgres:postgres@db:5432/$DB_NAME" \
-            ghcr.io/tonmate/tonmate:${{ github.event.inputs.tag || 'latest' }} \
-            npx prisma migrate deploy
-          echo "✅ Migrations completed successfully!"
-          EOF
+    uses: ./.github/workflows/migrations.yml
+    with:
+      node-version: ${{ env.NODE_VERSION }}
+      environment: ${{ github.event.inputs.environment || 'production' }}
+      tag: ${{ github.event.inputs.tag || 'latest' }}
+      registry: ${{ env.REGISTRY }}
+      image-name: ${{ env.IMAGE_NAME }}
+      deployments-repo: "tonmate/deployments"
+    secrets:
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}

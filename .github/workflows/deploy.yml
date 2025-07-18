@@ -1,0 +1,120 @@
+name: Reusable Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: false
+        type: string
+        default: "production"
+      tag:
+        required: false
+        type: string
+        default: "latest"
+      image-name:
+        required: true
+        type: string
+      registry:
+        required: false
+        type: string
+        default: "ghcr.io"
+      deployments-repo:
+        required: false
+        type: string
+        default: "tonmate/deployments"
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_USER:
+        required: true
+      VPS_HOST:
+        required: true
+      DATABASE_URL:
+        required: true
+      NEXTAUTH_SECRET:
+        required: true
+      JWT_SECRET:
+        required: true
+      ENCRYPTION_KEY:
+        required: true
+      OPENAI_API_KEY:
+        required: true
+      NEXTAUTH_URL:
+        required: true
+      GH_TOKEN:
+        required: true
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install SSH client
+        run: sudo apt-get update && sudo apt-get install -y openssh-client
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to VPS
+        run: |
+          # Determine target environment
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then 
+            targetEnvironment=production
+          else 
+            targetEnvironment=staging
+          fi
+
+          # Override with input if provided
+          if [ "${{ inputs.environment }}" != "" ]; then
+            targetEnvironment=${{ inputs.environment }}
+          fi
+
+          # Generate a unique job ID
+          JOB_ID=$(date +%s)
+
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+            echo 'Connecting to VPS and starting deployment...'
+
+            # Ensure the target directory exists
+            mkdir -p ~/configs_${JOB_ID}
+            cd ~/configs_${JOB_ID}
+
+
+            # Clone the repository using token
+            git clone https://github.com/tonmate/tonmate.git
+
+
+
+            # Deploy the updated service
+            cd tonmate/docker
+
+
+            # Create .env file with secrets
+            cat > .env << EOF
+            DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
+            NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
+            JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
+            NODE_ENV=production
+            EOF
+            
+
+            docker compose pull
+            docker compose up -f docker-compose.${targetEnvironment}.yml -d --build --force-recreate tonmate-${targetEnvironment}
+           
+           
+            # Cleanup temporary files
+            cd ~ && rm -rf configs_${JOB_ID}
+            echo 'Deployment finished successfully!'
+          "

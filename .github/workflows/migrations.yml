@@ -1,0 +1,107 @@
+name: Reusable Migrations Workflow
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: "20.x"
+      environment:
+        required: false
+        type: string
+        default: "production"
+      tag:
+        required: false
+        type: string
+        default: "latest"
+      image-name:
+        required: true
+        type: string
+      registry:
+        required: false
+        type: string
+        default: "ghcr.io"
+      deployments-repo:
+        required: false
+        type: string
+        default: "tonmate/deployments"
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: true
+      SSH_USER:
+        required: true
+      VPS_HOST:
+        required: true
+      DATABASE_URL:
+        required: true
+      GH_TOKEN:
+        required: true
+
+jobs:
+  migrations:
+    name: Run Migrations
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run db:generate
+
+      - name: Setup SSH for migrations
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run migrations on DB
+        run: |
+          # Determine target environment
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then 
+            targetEnvironment=production
+          else 
+            targetEnvironment=staging
+          fi
+
+          # Override with input if provided
+          if [ "${{ inputs.environment }}" != "" ]; then
+            targetEnvironment=${{ inputs.environment }}
+          fi
+
+          # Generate a unique job ID
+          JOB_ID=$(date +%s)
+
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "
+            set -e
+            echo 'Connecting to VPS and starting migrations...'
+
+
+
+            # Navigate to the service directory
+            cd services/tonmate/${targetEnvironment}
+            
+            # Run migrations
+            echo "Running database migrations on ${targetEnvironment} environment..."
+            docker run --rm \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              ${{ inputs.registry }}/${{ inputs.image-name }}:${{ inputs.tag }} \
+              npx prisma migrate deploy
+
+            # Cleanup temporary files
+            cd ~ && rm -rf configs_${JOB_ID}
+            echo '✅ Migrations completed successfully!'
+          "

@@ -1,0 +1,72 @@
+name: Reusable Test Workflow
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        required: false
+        type: string
+        default: "20.x"
+    secrets:
+      DATABASE_URL:
+        required: true
+      NEXTAUTH_SECRET:
+        required: true
+      JWT_SECRET:
+        required: true
+      ENCRYPTION_KEY:
+        required: true
+      OPENAI_API_KEY:
+        required: true
+    outputs:
+      test_success:
+        description: "Whether tests passed successfully"
+        value: ${{ jobs.test.outputs.test_success }}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    outputs:
+      test_success: ${{ steps.set-output.outputs.test_success }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test environment
+        run: |
+          cp environment.example .env.local
+          echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
+          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
+          echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
+          echo "JWT_SECRET=$JWT_SECRET" >> .env.local
+          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Run linting
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Set output
+        id: set-output
+        run: echo "test_success=true" >> $GITHUB_OUTPUT
