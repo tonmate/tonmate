@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/tonmate/tonmate/compare/v1.0.0...v1.0.1) (2025-07-18)
+
+### Bug Fixes
+
+* correct workflow job conditions to allow manual triggers and proper job dependencies ([f80be3b](https://github.com/tonmate/tonmate/commit/f80be3b30cefa445edb857119d9671da0d0394be))
+
 ## 1.0.0 (2025-07-18)
 
 ### Features
