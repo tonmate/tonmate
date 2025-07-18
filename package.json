@@ -33,6 +33,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "release": "semantic-release",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -115,6 +116,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.3",
+    "@semantic-release/npm": "^12.0.2",
+    "@semantic-release/release-notes-generator": "^14.0.3",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
@@ -130,6 +137,7 @@
     "jest": "^30.0.4",
     "jest-environment-jsdom": "^30.0.4",
     "playwright": "^1.54.1",
+    "semantic-release": "^24.2.7",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
