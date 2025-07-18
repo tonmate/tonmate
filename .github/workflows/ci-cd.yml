@@ -48,28 +48,14 @@ jobs:
     if: github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
     
     env:
-      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      # Using DATABASE_URL from GitHub secrets
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
     
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
- 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,7 +72,6 @@ jobs:
       - name: Setup test environment
         run: |
           cp environment.example .env.local
-          echo "DATABASE_URL=$DATABASE_URL" >> .env.local
           echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
           echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
           echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
@@ -94,6 +79,8 @@ jobs:
           echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
 
       - name: Generate Prisma client
+        # This step only generates TypeScript types from the schema
+        # No database connection or operations are performed
         run: npm run db:generate
       
       - name: Run linting
@@ -264,7 +251,8 @@ jobs:
               ports:
                 - "3000:3000"
               environment:
-                - DATABASE_URL=postgresql://postgres:postgres@db:5432/tonmate_production
+                # Database URL to be configured on the server
+                - DATABASE_URL=${DATABASE_URL}
                 - NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}
                 - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
                 - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
@@ -295,11 +283,11 @@ jobs:
           docker-compose pull
           docker-compose up -d
           
-          # Run migrations manually if specified
           echo "Deployment completed!"
           EOF
 
-  # Migrations stage runs only when explicitly requested
+  # Migrations stage runs ONLY when explicitly requested via manual trigger
+  # This ensures database operations are controlled and only happen when deliberately invoked
   migrations:
     name: Migrations
     runs-on: ubuntu-latest
@@ -320,6 +308,11 @@ jobs:
         run: npm ci
       
       - name: Generate Prisma client
+        # This step only generates TypeScript types from the schema
+        # No database connection or operations are performed here
+        env:
+          # Using DATABASE_URL from GitHub secrets
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npm run db:generate
       
       - name: Setup SSH for migrations
@@ -329,18 +322,34 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
       
-      - name: Run migrations on production DB
+      - name: Run migrations on DB
         run: |
-          echo "Running database migrations on ${{ github.event.inputs.environment }} environment..."
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          cd ~/tonmate
           
-          # Use environment-specific secrets for database connection
-          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
-            DATABASE_URL="${{ secrets.PROD_DATABASE_URL }}"
-          else
-            DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+          # Get the Docker network name (usually folder_default)
+          NETWORK=$(docker network ls | grep tonmate | awk '{print $2}')
+          if [ -z "$NETWORK" ]; then
+            echo "❌ Error: Could not find Docker network for tonmate"
+            echo "Make sure the application is deployed before running migrations"
+            exit 1
           fi
           
-          # Run migrations using Prisma
-          DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy
+          echo "Running database migrations on ${{ github.event.inputs.environment }} environment..."
           
-          echo "Migrations completed successfully!"
+          # Set environment-specific configuration
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            DB_NAME="tonmate_production"
+          else
+            DB_NAME="tonmate_staging"
+          fi
+          
+          # Run migrations in a temporary container connected to the same network
+          # This doesn't require the application to be running
+          docker run --rm --network $NETWORK \
+            -e DATABASE_URL="postgresql://postgres:postgres@db:5432/$DB_NAME" \
+            ghcr.io/tonmate/tonmate:${{ github.event.inputs.tag || 'latest' }} \
+            npx prisma migrate deploy
+          
+          echo "✅ Migrations completed successfully!"
+          EOF
