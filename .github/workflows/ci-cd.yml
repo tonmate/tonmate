@@ -39,6 +39,12 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  security-events: write
+
 jobs:
   # Only run test stage for automatic triggers or full pipeline
   test:
@@ -94,6 +100,10 @@ jobs:
     name: Build
     needs: [test]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     # Skip build stage for deploy-only or migrations-only
     if: |
       success() &&
