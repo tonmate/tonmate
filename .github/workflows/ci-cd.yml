@@ -1,0 +1,346 @@
+name: CI/CD Pipeline
+
+on:
+  # Automatic triggers
+  push:
+    branches: [ main, staging ]
+    tags: ['v*']
+  pull_request:
+    branches: [ main, staging ]
+  
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'full-pipeline'
+        type: choice
+        options:
+          - full-pipeline
+          - deploy-only
+          - migrations-only
+      environment:
+        description: 'Environment to target'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      tag:
+        description: 'Image tag to deploy'
+        required: false
+        default: 'latest'
+        type: string
+
+env:
+  NODE_VERSION: '20.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Only run test stage for automatic triggers or full pipeline
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    # Skip test stage for deploy-only or migrations-only
+    if: github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
+    
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+      NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+ 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test environment
+        run: |
+          cp environment.example .env.local
+          echo "DATABASE_URL=$DATABASE_URL" >> .env.local
+          echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
+          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
+          echo "OPENAI_API_KEY=$OPENAI_API_KEY" >> .env.local
+          echo "JWT_SECRET=$JWT_SECRET" >> .env.local
+          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+      
+      - name: Run linting
+        run: npm run lint
+      
+      - name: Run tests
+        run: npm test
+
+  # Build stage runs after test for automatic triggers or full pipeline
+  build:
+    name: Build
+    needs: [test]
+    runs-on: ubuntu-latest
+    # Skip build stage for deploy-only or migrations-only
+    if: |
+      success() &&
+      github.event.inputs.action != 'deploy-only' && 
+      github.event.inputs.action != 'migrations-only' && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging' || startsWith(github.ref, 'refs/tags/v'))
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Determine tag and target environment
+        id: vars
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            # Tag push
+            TARGET_ENV=production
+            TAG=${GITHUB_REF#refs/tags/}
+            echo "Building release: $TAG"
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            # Main branch
+            TARGET_ENV=production
+            TAG=latest
+            echo "Building main branch: latest"
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            # Staging branch
+            TARGET_ENV=staging
+            TAG=staging
+            echo "Building staging branch: staging"
+          else
+            # Other branches (PRs)
+            TARGET_ENV=development
+            TAG=dev-${{ github.sha }}
+            echo "Building development: $TAG"
+          fi
+          echo "target_env=$TARGET_ENV" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "Target Environment: $TARGET_ENV"
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      - name: Output image details
+        run: |
+          echo "✅ Docker image built and pushed!"
+          echo "  Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.tag }}"
+          echo "  Environment: ${{ steps.vars.outputs.target_env }}"
+
+  # Release stage runs after build only for tags
+  release:
+    name: Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: success() && startsWith(github.ref, 'refs/tags/v') && github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            ## Tonmate ${{ github.ref_name }}
+            
+            ### Changes
+            - See the [CHANGELOG.md](https://github.com/tonmate/tonmate/blob/main/CHANGELOG.md) for details
+            
+            ### Docker Usage
+            ```bash
+            docker pull ghcr.io/tonmate/tonmate:${{ github.ref_name }}
+            ```
+            
+            ### Deploy
+            To deploy this version, run:
+            ```bash
+            docker-compose pull
+            docker-compose up -d
+            ```
+
+  # Deploy stage runs after build for full pipeline or directly for deploy-only
+  deploy:
+    name: Deploy
+    # Needs build for full pipeline, but no dependencies for deploy-only
+    needs: [build]
+    if: |
+      (success() && github.event.inputs.action == 'full-pipeline') ||
+      github.event.inputs.action == 'deploy-only'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Set deployment tag
+        id: deploy-tag
+        run: |
+          # Use provided tag or default to latest
+          DEPLOY_TAG="${{ github.event.inputs.tag || 'latest' }}"
+          echo "Using tag: $DEPLOY_TAG"
+          echo "tag=$DEPLOY_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Deploy to VPS
+        run: |
+          # Create docker-compose.yml on the server
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          mkdir -p ~/tonmate
+          cat > ~/tonmate/docker-compose.yml << 'DOCKER_COMPOSE'
+          version: '3.8'
+          
+          services:
+            app:
+              image: ghcr.io/tonmate/tonmate:${{ steps.deploy-tag.outputs.tag }}
+              container_name: tonmate-app
+              restart: unless-stopped
+              ports:
+                - "3000:3000"
+              environment:
+                - DATABASE_URL=postgresql://postgres:postgres@db:5432/tonmate_production
+                - NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}
+                - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+                - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+                - JWT_SECRET=${{ secrets.JWT_SECRET }}
+                - ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+                - NODE_ENV=production
+              depends_on:
+                - db
+            
+            db:
+              image: postgres:15-alpine
+              container_name: tonmate-db
+              restart: unless-stopped
+              environment:
+                - POSTGRES_DB=tonmate_production
+                - POSTGRES_USER=postgres
+                - POSTGRES_PASSWORD=postgres
+              volumes:
+                - postgres_data:/var/lib/postgresql/data
+              ports:
+                - "5432:5432"
+          
+          volumes:
+            postgres_data:
+          DOCKER_COMPOSE
+          
+          cd ~/tonmate
+          docker-compose pull
+          docker-compose up -d
+          
+          # Run migrations manually if specified
+          echo "Deployment completed!"
+          EOF
+
+  # Migrations stage runs only when explicitly requested
+  migrations:
+    name: Migrations
+    runs-on: ubuntu-latest
+    if: github.event.inputs.action == 'migrations-only'
+    environment: ${{ github.event.inputs.environment || 'staging' }}
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Generate Prisma client
+        run: npm run db:generate
+      
+      - name: Setup SSH for migrations
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Run migrations on production DB
+        run: |
+          echo "Running database migrations on ${{ github.event.inputs.environment }} environment..."
+          
+          # Use environment-specific secrets for database connection
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            DATABASE_URL="${{ secrets.PROD_DATABASE_URL }}"
+          else
+            DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}"
+          fi
+          
+          # Run migrations using Prisma
+          DATABASE_URL="$DATABASE_URL" npx prisma migrate deploy
+          
+          echo "Migrations completed successfully!"
