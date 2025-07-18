@@ -38,7 +38,7 @@ env:
   IMAGE_NAME: tonmate/tonmate
 
 permissions:
-  contents: read
+  contents: write
   packages: write
   id-token: write
   security-events: write
