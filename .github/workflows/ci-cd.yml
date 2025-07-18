@@ -99,9 +99,11 @@ jobs:
     needs: [test]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
+      issues: write
+      pull-requests: write
     # Skip build stage for deploy-only or migrations-only
     if: |
       success() &&
@@ -140,6 +142,8 @@ jobs:
         env:
           # Use PAT for private repository access - fixes EGITNOPERMISSION
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          # Enable debug output for troubleshooting
+          DEBUG: semantic-release:*
       
       - name: Determine Docker tags
         id: vars
