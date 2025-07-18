@@ -18,14 +18,6 @@ on:
       image-name:
         required: true
         type: string
-      registry:
-        required: false
-        type: string
-        default: "ghcr.io"
-      deployments-repo:
-        required: false
-        type: string
-        default: "tonmate/deployments"
     secrets:
       SSH_PRIVATE_KEY:
         required: true

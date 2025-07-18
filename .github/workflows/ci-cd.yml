@@ -97,6 +97,7 @@ jobs:
     if: github.event.inputs.action == 'migrations-only'
     uses: ./.github/workflows/migrations.yml
     with:
+      image-name: ${{ github.repository }}
       environment: ${{ github.event.inputs.environment || 'production' }}
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
