@@ -1,6 +1,6 @@
 module.exports = {
   extends: ["next/core-web-vitals", "next/typescript"],
-  ignorePatterns: ["**/generated/**/*.js", "**/prisma/**/*.js"],
+  ignorePatterns: ["**/src/generated/**/*", "**/prisma/**/*"],
   rules: {
     // Temporarily disable the no-explicit-any rule to fix CI pipeline
     "@typescript-eslint/no-explicit-any": "off",
