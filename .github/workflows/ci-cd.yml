@@ -256,7 +256,8 @@ jobs:
     needs: [build]
     if: |
       (success() && github.event.inputs.action == 'full-pipeline') ||
-      (always() && github.event.inputs.action == 'deploy-only')
+      (always() && github.event.inputs.action == 'deploy-only') ||
+      (success() && needs.build.outputs.new_release_published == 'true' && github.event_name == 'push')
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     
