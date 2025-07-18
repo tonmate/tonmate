@@ -19,7 +19,9 @@ const eslintConfig = [
       // Relax unused vars rule to warning instead of error
       "@typescript-eslint/no-unused-vars": "warn",
       // Disable no-unused-expressions to fix generated code warnings
-      "@typescript-eslint/no-unused-expressions": "warn"
+      "@typescript-eslint/no-unused-expressions": "warn",
+      // Disable no-this-alias rule to allow aliasing this to variables
+      "@typescript-eslint/no-this-alias": "off"
     }
   },
   {
