@@ -138,7 +138,8 @@ jobs:
             @semantic-release/changelog@6.0.0
             @semantic-release/git@10.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT for private repository - fixes issue #3590
+          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
       
       - name: Determine Docker tags
         id: vars
@@ -280,7 +281,7 @@ jobs:
                 - "3000:3000"
               environment:
                 # Database URL to be configured on the server
-                - DATABASE_URL=${DATABASE_URL}
+                - DATABASE_URL=${{ secrets.DATABASE_URL }}
                 - NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}
                 - NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
                 - OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
@@ -295,9 +296,9 @@ jobs:
               container_name: tonmate-db
               restart: unless-stopped
               environment:
-                - POSTGRES_DB=tonmate_production
-                - POSTGRES_USER=postgres
-                - POSTGRES_PASSWORD=postgres
+                - POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+                - POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+                - POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
               volumes:
                 - postgres_data:/var/lib/postgresql/data
               ports:
