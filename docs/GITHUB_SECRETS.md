@@ -32,6 +32,17 @@ Navigate to your GitHub repository → Settings → Secrets and variables → Ac
 |-------------|-------------|---------------|
 | `OPENAI_API_KEY` | OpenAI API key | `sk-...` |
 
+### VPS Deployment Secrets
+
+For deploying to your VPS server, you'll need these additional secrets:
+
+| Secret | Description | Example |
+|--------|-------------|----------|
+| `SSH_PRIVATE_KEY` | Private SSH key for VPS access | `-----BEGIN RSA PRIVATE KEY-----...` |
+| `SSH_USER` | SSH username for VPS | `deploy` |
+| `VPS_HOST` | VPS hostname or IP address | `your-server.com` |
+| `SENTRY_AUTH_TOKEN` | Sentry authentication token (optional) | `sntrys_1234567890abcdef` |
+
 ## Setting Up Configuration
 
 1. **Go to GitHub Repository Settings:**

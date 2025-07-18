@@ -62,7 +62,7 @@ jobs:
           ## Installation
           
           ```bash
-          git clone https://github.com/aryasadeghy/tonmate.git
+          git clone https://github.com/tonmate/tonmate.git
           cd tonmate
           npm install
           cp environment.example .env.local
@@ -73,10 +73,10 @@ jobs:
           ## Docker
           
           ```bash
-          docker run -p 3000:3000 ghcr.io/aryasadeghy/tonmate:${{ github.ref_name }}
+          docker run -p 3000:3000 ghcr.io/tonmate/tonmate:${{ github.ref_name }}
           ```
           
-          **Full Changelog**: https://github.com/aryasadeghy/tonmate/compare/v1.0.0...${{ github.ref_name }}
+          **Full Changelog**: https://github.com/tonmate/tonmate/compare/v1.0.0...${{ github.ref_name }}
         draft: false
         prerelease: false
 

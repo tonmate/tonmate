@@ -1,0 +1,101 @@
+name: Deploy to VPS
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      force:
+        description: 'Force deployment (recreate containers)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Test SSH Connection
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "echo 'Connected Successfully'"
+      
+      - name: Deploy to VPS
+        run: |
+          TARGET_ENV=${{ github.event.inputs.environment }}
+          PROJECT_NAME=${{ github.event.repository.name }}
+          JOB_ID=${{ github.run_id }}
+          FORCE_RECREATE=${{ github.event.inputs.force }}
+          
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "
+          set -e
+          echo 'Connecting to VPS and starting deployment...'
+          
+          # Ensure the target directory exists
+          mkdir -p ~/configs_${JOB_ID}
+          cd ~/configs_${JOB_ID}
+          
+          # Authenticate Docker with GitHub Container Registry
+          echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u '${{ github.actor }}' --password-stdin
+          
+          # Create docker-compose.yml from template
+          cat > docker-compose.yml << EOF
+          version: '3.8'
+          services:
+            ${PROJECT_NAME}-${TARGET_ENV}:
+              image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.tag || 'latest' }}
+              container_name: ${PROJECT_NAME}-${TARGET_ENV}
+              restart: unless-stopped
+              ports:
+                - "3000:3000"
+              environment:
+                - NODE_ENV=${TARGET_ENV}
+                - DATABASE_URL=\${DATABASE_URL}
+                - NEXTAUTH_SECRET=\${NEXTAUTH_SECRET}
+                - NEXTAUTH_URL=\${NEXTAUTH_URL}
+                - OPENAI_API_KEY=\${OPENAI_API_KEY}
+                - JWT_SECRET=\${JWT_SECRET}
+                - ENCRYPTION_KEY=\${ENCRYPTION_KEY}
+          EOF
+          
+          # Pull latest images
+          docker compose -p ${TARGET_ENV} pull ${PROJECT_NAME}-${TARGET_ENV}
+          
+          # Deploy the service
+          if [ '${FORCE_RECREATE}' == 'true' ]; then
+            echo 'Force recreating containers...'
+            docker compose -p ${TARGET_ENV} up -d --build --force-recreate ${PROJECT_NAME}-${TARGET_ENV}
+          else
+            echo 'Deploying with existing containers...'
+            docker compose -p ${TARGET_ENV} up -d --build ${PROJECT_NAME}-${TARGET_ENV}
+          fi
+          
+          # Cleanup temporary files
+          cd ~ && rm -rf configs_${JOB_ID}
+          echo 'Deployment finished successfully!'
+          "
+      
+      - name: Verify deployment
+        run: |
+          echo "Deployment to ${{ github.event.inputs.environment }} completed successfully!"
+          echo "Project: ${{ github.event.repository.name }}"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Force recreate: ${{ github.event.inputs.force }}"

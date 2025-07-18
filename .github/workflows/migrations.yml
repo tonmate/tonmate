@@ -1,0 +1,79 @@
+name: Run Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to run migrations on'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      migration_type:
+        description: 'Type of migration to run'
+        required: true
+        default: 'deploy'
+        type: choice
+        options:
+          - deploy
+          - reset
+          - generate
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Setup environment variables
+        run: |
+          TARGET_ENV=${{ github.event.inputs.environment }}
+          
+          # Create .env file from secrets
+          cat > .env << EOF
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL=${{ vars.NEXTAUTH_URL }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}
+          EOF
+          
+          echo "Environment file created for ${TARGET_ENV}"
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run migrations
+        run: |
+          case "${{ github.event.inputs.migration_type }}" in
+            "deploy")
+              echo "Running migration deploy..."
+              npm run db:migrate:deploy
+              ;;
+            "reset")
+              echo "Running migration reset..."
+              npm run db:migrate:reset
+              ;;
+            "generate")
+              echo "Generating Prisma client..."
+              npm run db:generate
+              ;;
+          esac
+      
+      - name: Verify migrations
+        run: |
+          echo "Migration completed successfully!"
+          echo "Environment: ${{ github.event.inputs.environment }}"
+          echo "Migration type: ${{ github.event.inputs.migration_type }}"
