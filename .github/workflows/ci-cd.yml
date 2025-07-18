@@ -138,7 +138,8 @@ jobs:
             @semantic-release/changelog@6.0.0
             @semantic-release/git@10.0.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use PAT for private repository access - fixes EGITNOPERMISSION
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
       
       - name: Determine Docker tags
         id: vars
