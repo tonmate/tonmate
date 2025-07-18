@@ -29,11 +29,6 @@ on:
         default: "latest"
         type: string
 
-env:
-  NODE_VERSION: "20.x"
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-
 permissions:
   contents: write
   packages: write
@@ -45,8 +40,6 @@ jobs:
     name: Run Tests
     if: github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
     uses: ./.github/workflows/test.yml
-    with:
-      node-version: ${{ env.NODE_VERSION }}
     secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
@@ -63,11 +56,6 @@ jobs:
       github.event.inputs.action != 'migrations-only' && 
       (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/build.yml
-    with:
-      node-version: ${{ env.NODE_VERSION }}
-      registry: ${{ env.REGISTRY }}
-      image-name: ${{ env.IMAGE_NAME }}
-      dockerfile-path: docker/Dockerfile
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
@@ -80,10 +68,6 @@ jobs:
     uses: ./.github/workflows/deploy.yml
     with:
       environment: ${{ github.event.inputs.environment || 'production' }}
-      tag: ${{ github.event.inputs.tag || needs.build.outputs.new_release_version || 'latest' }}
-      registry: ${{ env.REGISTRY }}
-      image-name: ${{ env.IMAGE_NAME }}
-      deployments-repo: "tonmate/deployments"
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.SSH_USER }}
@@ -101,12 +85,7 @@ jobs:
     if: github.event.inputs.action == 'migrations-only'
     uses: ./.github/workflows/migrations.yml
     with:
-      node-version: ${{ env.NODE_VERSION }}
       environment: ${{ github.event.inputs.environment || 'production' }}
-      tag: ${{ github.event.inputs.tag || 'latest' }}
-      registry: ${{ env.REGISTRY }}
-      image-name: ${{ env.IMAGE_NAME }}
-      deployments-repo: "tonmate/deployments"
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.SSH_USER }}
