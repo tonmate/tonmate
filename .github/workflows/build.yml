@@ -3,21 +3,21 @@ name: Reusable Build Workflow
 on:
   workflow_call:
     inputs:
-      node-version:
-        required: false
-        type: string
-        default: "20.x"
       registry:
         required: false
         type: string
         default: "ghcr.io"
-      image-name:
-        required: true
-        type: string
       dockerfile-path:
         required: false
         type: string
         default: "docker/Dockerfile"
+      image-name:
+        required: true
+        type: string
+      node-version:
+        required: false
+        type: string
+        default: "20"
     secrets:
       GH_TOKEN:
         required: true
@@ -49,8 +49,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -69,7 +67,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_TOKEN }}
 
       - name: Extract metadata
         id: meta

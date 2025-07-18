@@ -1,5 +1,7 @@
 name: CI/CD Pipeline
 
+
+
 on:
   push:
     branches: [main]
@@ -56,6 +58,11 @@ jobs:
       github.event.inputs.action != 'migrations-only' && 
       (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
     uses: ./.github/workflows/build.yml
+    with:
+      registry: ${{ github.event.inputs.registry || 'ghcr.io' }}
+      dockerfile-path: docker/Dockerfile
+      image-name: ${{ github.repository }}
+      node-version: ${{ github.event.inputs.node-version || '20' }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
