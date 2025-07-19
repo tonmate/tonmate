@@ -1,3 +1,9 @@
+## [1.0.4](https://github.com/tonmate/tonmate/compare/v1.0.3...v1.0.4) (2025-07-19)
+
+### Code Refactoring
+
+* improve SSH deployment script with cleaner environment variable handling ([b3fd85b](https://github.com/tonmate/tonmate/commit/b3fd85bce67e17883ee51a2f5e2dcdc69508b8ea))
+
 ## [1.0.3](https://github.com/tonmate/tonmate/compare/v1.0.2...v1.0.3) (2025-07-19)
 
 ### Code Refactoring
