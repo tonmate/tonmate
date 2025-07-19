@@ -1,3 +1,25 @@
+## [1.0.2](https://github.com/tonmate/tonmate/compare/v1.0.1...v1.0.2) (2025-07-18)
+
+### Bug Fixes
+
+* enable automatic deployment when semantic-release publishes new version ([472579d](https://github.com/tonmate/tonmate/commit/472579debe0f2e672ab6da7be745208e925107b4))
+
+### Styles
+
+* clean up CI/CD workflow with consistent formatting and reduced comments ([4b31d4f](https://github.com/tonmate/tonmate/commit/4b31d4f8bde1762ad4e88c79521662fcc4225fd8))
+
+### Code Refactoring
+
+* remove deployments-repo input and add image-name parameter to deployment workflow ([ebcd4d5](https://github.com/tonmate/tonmate/commit/ebcd4d5964161da935d96c91d7e2658136b0d6bd))
+* remove redundant environment variables and workflow inputs in CI/CD pipeline ([23ed9fb](https://github.com/tonmate/tonmate/commit/23ed9fb92b4a0f03bbaa313ea523839a1c709c84))
+* restructure CI/CD workflows into reusable components ([57f2e22](https://github.com/tonmate/tonmate/commit/57f2e22410e1bbd90cb42e088dbf5de6c8ff05f7))
+
+### CI
+
+* reorganize workflow inputs and standardize node version configuration ([a8a2506](https://github.com/tonmate/tonmate/commit/a8a25060515366e929423fee6f776e97a6a8b71f))
+* simplify workflow inputs by removing unused registry and deployments-repo parameters ([3d14054](https://github.com/tonmate/tonmate/commit/3d1405425e979a65325897965da726423cff3552))
+* update GitHub Actions permissions to include issues and pull requests access ([31aaae0](https://github.com/tonmate/tonmate/commit/31aaae08ebc6f787fc0fee37f908b655ccc32370))
+
 ## 1.0.0 (2025-07-18)
 
 ### Features
