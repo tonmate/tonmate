@@ -1,3 +1,13 @@
+## [1.0.5](https://github.com/tonmate/tonmate/compare/v1.0.4...v1.0.5) (2025-07-19)
+
+### Bug Fixes
+
+* use environment-specific docker compose file when pulling images ([02e1ad5](https://github.com/tonmate/tonmate/commit/02e1ad58a55cc8b2fd170d87643a0cc7d2e0bbd5))
+
+### Code Refactoring
+
+* simplify DB migrations by running inside existing app container instead of spawning new one ([f806e8f](https://github.com/tonmate/tonmate/commit/f806e8f556dbc24c7c86ba5ac98ecea90a9c6e5b))
+
 ## [1.0.4](https://github.com/tonmate/tonmate/compare/v1.0.3...v1.0.4) (2025-07-19)
 
 ### Code Refactoring
