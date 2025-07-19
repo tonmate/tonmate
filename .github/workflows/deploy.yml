@@ -100,8 +100,14 @@ jobs:
             echo 'OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}' >> .env
             echo 'NODE_ENV=production' >> .env
 
+
+            echo '[•] Logging into GitHub Container Registry...'
+            echo '${{ secrets.GH_TOKEN }}' | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+
             echo '[•] Pulling docker images...'
             docker compose -f docker-compose.$targetEnvironment.yml pull
+
 
             echo '[•] Restarting service: tonmate-$targetEnvironment'
             docker compose -f docker-compose.$targetEnvironment.yml up -d --build --force-recreate tonmate-$targetEnvironment
