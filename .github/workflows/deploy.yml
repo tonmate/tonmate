@@ -101,7 +101,7 @@ jobs:
             echo 'NODE_ENV=production' >> .env
 
             echo '[•] Pulling docker images...'
-            docker compose pull
+            docker compose -f docker-compose.$targetEnvironment.yml pull
 
             echo '[•] Restarting service: tonmate-$targetEnvironment'
             docker compose -f docker-compose.$targetEnvironment.yml up -d --build --force-recreate tonmate-$targetEnvironment
