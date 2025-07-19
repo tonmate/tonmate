@@ -73,29 +73,26 @@ jobs:
             targetEnvironment=${{ inputs.environment }}
           fi
 
-          # Generate a unique job ID
           JOB_ID=$(date +%s)
 
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "
+          echo "Starting remote deployment on VPS..."
+
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} bash -s <<EOF
             set -e
-            echo 'Connecting to VPS and starting deployment...'
+            echo "[✓] Connected to VPS"
 
-            # Ensure the target directory exists
-            mkdir -p ~/configs_${JOB_ID}
-            cd ~/configs_${JOB_ID}
+            echo "[•] Creating temp directory"
+            mkdir -p ~/configs_\$JOB_ID
+            cd ~/configs_\$JOB_ID
 
-
-            # Clone the repository using token
+            echo "[•] Cloning repository..."
             git clone https://github.com/tonmate/tonmate.git
 
-
-
-            # Deploy the updated service
+            echo "[•] Navigating to docker directory..."
             cd tonmate/docker
 
-
-            # Create .env file with secrets
-            cat > .env << EOF
+            echo "[•] Writing .env file..."
+            cat > .env << 'EOT'
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
             NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
             NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
@@ -103,14 +100,15 @@ jobs:
             ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
             OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
             NODE_ENV=production
-            EOF
-            
+            EOT
 
+            echo "[•] Pulling docker images..."
             docker compose pull
-            docker compose up -f docker-compose.${targetEnvironment}.yml -d --build --force-recreate tonmate-${targetEnvironment}
-           
-           
-            # Cleanup temporary files
-            cd ~ && rm -rf configs_${JOB_ID}
-            echo 'Deployment finished successfully!'
-          "
+
+            echo "[•] Restarting service: tonmate-\$targetEnvironment"
+            docker compose -f docker-compose.\$targetEnvironment.yml up -d --build --force-recreate tonmate-\$targetEnvironment
+
+            echo "[•] Cleaning up..."
+            cd ~ && rm -rf configs_\$JOB_ID
+
+            echo "[✓] Deployment finished successfully!"
