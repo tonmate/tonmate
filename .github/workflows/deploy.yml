@@ -68,47 +68,46 @@ jobs:
             targetEnvironment=staging
           fi
 
-          # Override with input if provided
           if [ "${{ inputs.environment }}" != "" ]; then
             targetEnvironment=${{ inputs.environment }}
           fi
 
           JOB_ID=$(date +%s)
+          DEPLOY_DIR=configs_$JOB_ID
 
           echo "Starting remote deployment on VPS..."
 
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} bash -s <<EOF
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.VPS_HOST }} "
             set -e
-            echo "[✓] Connected to VPS"
 
-            echo "[•] Creating temp directory"
-            mkdir -p ~/configs_\$JOB_ID
-            cd ~/configs_\$JOB_ID
+            echo '[✓] Connected to VPS'
 
-            echo "[•] Cloning repository..."
+            echo '[•] Creating temp directory'
+            mkdir -p ~/$DEPLOY_DIR && cd ~/$DEPLOY_DIR
+
+            echo '[•] Cloning repository...'
             git clone https://github.com/tonmate/tonmate.git
 
-            echo "[•] Navigating to docker directory..."
+            echo '[•] Navigating to docker directory...'
             cd tonmate/docker
 
-            echo "[•] Writing .env file..."
-            cat > .env << 'EOT'
-            DATABASE_URL="${{ secrets.DATABASE_URL }}"
-            NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
-            NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
-            JWT_SECRET="${{ secrets.JWT_SECRET }}"
-            ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
-            OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}"
-            NODE_ENV=production
-            EOT
+            echo '[•] Writing .env file...'
+            echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > .env
+            echo 'NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}' >> .env
+            echo 'NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}' >> .env
+            echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+            echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> .env
+            echo 'OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}' >> .env
+            echo 'NODE_ENV=production' >> .env
 
-            echo "[•] Pulling docker images..."
+            echo '[•] Pulling docker images...'
             docker compose pull
 
-            echo "[•] Restarting service: tonmate-\$targetEnvironment"
-            docker compose -f docker-compose.\$targetEnvironment.yml up -d --build --force-recreate tonmate-\$targetEnvironment
+            echo '[•] Restarting service: tonmate-$targetEnvironment'
+            docker compose -f docker-compose.$targetEnvironment.yml up -d --build --force-recreate tonmate-$targetEnvironment
 
-            echo "[•] Cleaning up..."
-            cd ~ && rm -rf configs_\$JOB_ID
+            echo '[•] Cleaning up...'
+            cd ~ && rm -rf $DEPLOY_DIR
 
-            echo "[✓] Deployment finished successfully!"
+            echo '[✓] Deployment finished successfully!'
+          "
