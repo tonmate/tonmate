@@ -1,3 +1,9 @@
+## [1.0.6](https://github.com/tonmate/tonmate/compare/v1.0.5...v1.0.6) (2025-07-19)
+
+### CI
+
+* add GitHub Container Registry authentication step in deployment workflow ([7475669](https://github.com/tonmate/tonmate/commit/7475669e1b5530ef03f2a0e74e7eb40f3365026d))
+
 ## [1.0.5](https://github.com/tonmate/tonmate/compare/v1.0.4...v1.0.5) (2025-07-19)
 
 ### Bug Fixes
