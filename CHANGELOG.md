@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/tonmate/tonmate/compare/v1.0.2...v1.0.3) (2025-07-19)
+
+### Code Refactoring
+
+* improve deploy workflow with better logging and error handling ([2a28c16](https://github.com/tonmate/tonmate/commit/2a28c169e61aaa4fe614c2175cae80722b8cade2))
+
 ## [1.0.2](https://github.com/tonmate/tonmate/compare/v1.0.1...v1.0.2) (2025-07-18)
 
 ### Bug Fixes
