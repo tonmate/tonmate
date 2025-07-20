@@ -54,13 +54,14 @@ jobs:
 
       - name: Setup test environment
         run: |
-          cp environment.example .env.local
-          echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
-          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
-          echo "JWT_SECRET=$JWT_SECRET" >> .env.local
-          echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.local
-          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
-          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
+          echo '[•] Writing .env file...'
+          echo 'DATABASE_URL=${{ secrets.DATABASE_URL }}' > .env
+          echo 'NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}' >> .env
+          echo 'NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}' >> .env
+          echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+          echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> .env
+          echo 'NEXT_PUBLIC_APP_URL=${{ vars.NEXT_PUBLIC_APP_URL }}' >> .env
+          echo 'NODE_ENV=production' >> .env
 
       - name: Generate Prisma client
         run: npm run db:generate
