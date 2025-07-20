@@ -48,6 +48,7 @@ jobs:
     uses: ./.github/workflows/test.yml
     with:
       NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
     secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
