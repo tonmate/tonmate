@@ -104,11 +104,11 @@ jobs:
 
 
             echo '[•] Pulling docker images...'
-            docker compose -f docker-compose.$targetEnvironment.yml pull
+            docker compose -f docker-compose.$targetEnvironment.yml -p $targetEnvironment pull
 
 
             echo '[•] Restarting service: tonmate-$targetEnvironment'
-            docker compose -f docker-compose.$targetEnvironment.yml up -d --build --force-recreate tonmate-$targetEnvironment
+            docker compose -f docker-compose.$targetEnvironment.yml -p $targetEnvironment up -d --build --force-recreate tonmate-$targetEnvironment
 
             echo '[•] Cleaning up...'
             cd ~ && rm -rf $DEPLOY_DIR
