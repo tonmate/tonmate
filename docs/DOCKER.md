@@ -47,14 +47,11 @@ Create an `.env` file in the project root directory with the following variables
 ```
 # Required Variables
 NEXTAUTH_SECRET=your-secure-secret-key
-OPENAI_API_KEY=your-openai-api-key
 ENCRYPTION_KEY=your-32-character-encryption-key
 
-# Optional Variables
-ANTHROPIC_API_KEY=your-anthropic-api-key
-GOOGLE_AI_API_KEY=your-google-ai-api-key
-MISTRAL_API_KEY=your-mistral-api-key
-COHERE_API_KEY=your-cohere-api-key
+# AI Provider Configuration
+# AI provider API keys (OpenAI, Anthropic, Google AI, Mistral, Cohere) 
+# are configured per user through the web interface, not as environment variables
 ```
 
 ### PostgreSQL Configuration

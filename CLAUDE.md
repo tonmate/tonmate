@@ -4,160 +4,208 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Tonmate** is an AI-powered customer support platform that enables businesses to create intelligent support agents trained on their website content. It's built with Next.js 15, TypeScript, and includes advanced web crawling, multi-AI provider integrations, and production-ready deployment options.
+Tonmate is a comprehensive AI-powered customer support platform that enables businesses to create, deploy, and manage intelligent support agents trained on their specific content. It features advanced web crawling, multi-AI provider integrations, real-time analytics, and production-ready architecture.
+
+## Key Technologies
+
+- **Frontend**: Next.js 15 with App Router, React 19, TypeScript, Tailwind CSS
+- **Backend**: Next.js 15 API Routes, Prisma ORM with PostgreSQL
+- **AI/ML**: LangChain.js, OpenAI, Anthropic, Google AI, Mistral AI, Cohere
+- **Authentication**: NextAuth.js with JWT
+- **Database**: PostgreSQL (production), SQLite (dev fallback)
+- **Testing**: Jest with jsdom, React Testing Library
+- **Deployment**: Docker, Vercel support
 
 ## Essential Commands
 
 ### Development
 ```bash
 npm run dev                    # Start development server
-npm run build                  # Build for production (includes Prisma generation)
-npm run start                  # Start production server
-npm run setup:complete        # Complete automated setup (env + install + db + dev)
+npm run db:generate           # Generate Prisma client
+npm run db:push              # Push schema changes to database
+npm run db:migrate           # Create and apply migrations
+npm run db:studio            # Open Prisma Studio
 ```
 
 ### Testing & Quality
 ```bash
-npm run test                   # Run Jest tests
-npm run test:watch             # Run tests in watch mode
-npm run test:coverage          # Generate test coverage report
-npm run lint                   # Run ESLint
-npm run type-check             # TypeScript type checking
+npm run test                 # Run all tests
+npm run test:watch          # Run tests in watch mode
+npm run test:coverage       # Run tests with coverage report
+npm run lint                # Run ESLint
+npm run type-check          # Run TypeScript type checking
 ```
 
-### Database (Prisma)
+### Build & Deployment
 ```bash
-npm run db:generate            # Generate Prisma client
-npm run db:push                # Push schema to database
-npm run db:migrate             # Create and apply migrations
-npm run db:studio              # Open Prisma Studio
-npm run db:reset               # Reset database
+npm run build               # Build for production
+npm run start               # Start production server
+npm run build:production    # Build with NODE_ENV=production
+```
+
+### Database Operations
+```bash
+npm run db:reset            # Reset database (dev only)
+npm run db:seed             # Seed database with test data
+npm run db:deploy           # Deploy migrations (production)
 ```
 
 ### Docker Commands
 ```bash
-npm run docker:compose         # Start all services with Docker Compose
-npm run docker:compose:build   # Build and start services
-npm run docker:compose:down    # Stop all services
-npm run docker:db:migrate      # Run migrations in Docker container
+npm run docker:compose      # Start all services with Docker
+npm run docker:build        # Build Docker image
+npm run docker:db:migrate   # Run migrations in Docker container
 ```
 
-## Architecture Overview
+## Project Architecture
 
-### Core Components
+### Core Structure
+```
+src/
+├── app/                    # Next.js App Router (pages & API routes)
+├── components/             # React components
+│   ├── ui/                # Reusable UI components
+│   ├── AgentDetails/      # Agent management components
+│   ├── Layout/            # Layout components
+│   └── sidebar-pages/     # Sidebar page components
+├── lib/                   # Core business logic
+│   ├── agents/           # AI agent implementations
+│   ├── crawler/          # Website crawling system
+│   ├── embeddings/       # Vector embeddings service
+│   ├── knowledge/        # Knowledge processing pipeline
+│   ├── tools/            # Agent tools (LangChain)
+│   └── utils/            # Utility functions
+└── types/                # TypeScript type definitions
+```
 
-1. **AI Agent System** (`src/lib/agents/`)
-   - `UniversalSupportAgent.ts` - Main agent implementation with knowledge retrieval
-   - Currently supports OpenAI (GPT-3.5, GPT-4) with plans for additional providers
-   - Includes advanced context building and document scoring algorithms
+### Database Models (Prisma)
+Key models in `prisma/schema.prisma`:
+- **User**: User accounts with encrypted API keys
+- **Agent**: AI agent configurations and settings
+- **KnowledgeSource**: Website/content sources for training
+- **Document**: Processed documents with embeddings
+- **Conversation**: Chat history and context
+- **ModelConfiguration**: Multi-provider AI settings
+- **CrawlerConfiguration**: User-specific crawler settings
 
-2. **Knowledge Processing Pipeline** (`src/lib/`)
-   - `crawler/WebsiteCrawler.ts` - Advanced web crawling with content extraction
-   - `knowledge/KnowledgeProcessor.ts` - Content processing and chunking
-   - `embeddings/EmbeddingService.ts` - Vector embeddings generation
+### AI Agent System
+The platform uses a sophisticated AI agent architecture:
+- **Universal Support Agent**: Main customer support agent (`src/lib/agents/UniversalSupportAgent.ts`)
+- **Custom Tools**: LangChain tools for specialized functions (`src/lib/tools/`)
+- **Knowledge Retrieval**: Vector-based semantic search using embeddings
+- **Multi-Provider Support**: OpenAI, Anthropic, Google AI, Mistral, Cohere
 
-3. **Agent Tools** (`src/lib/tools/`)
-   - Domain-specific tools (OrderLookup, ProductSearch, ShopInfo, etc.)
-   - Custom action and escalation tools for enhanced agent capabilities
+### Knowledge Processing Pipeline
+1. **Web Crawling**: `src/lib/crawler/WebsiteCrawler.ts` - Intelligent website content extraction
+2. **Content Processing**: `src/lib/knowledge/KnowledgeProcessor.ts` - Text chunking and processing
+3. **Embeddings**: `src/lib/embeddings/EmbeddingService.ts` - Vector embedding generation
+4. **Storage**: Prisma models for structured knowledge storage
 
-4. **Next.js App Router Structure** (`src/app/`)
-   - API routes for agents, chat, knowledge sources, and analytics
-   - Pages for dashboard, agent management, and settings
-   - Real-time chat interface with playground
+## Environment Configuration
 
-### Database Schema (Prisma)
+Copy `environment.example` to `.env.local` for development. Key variables:
+- `DATABASE_URL`: PostgreSQL connection string
+- `NEXTAUTH_SECRET`: 32+ character secret for authentication
+- `ENCRYPTION_KEY`: For encrypting user API keys
+- `NEXTAUTH_URL`: Application URL
 
-Key models:
-- **User** - Authentication and user-specific AI configurations
-- **Agent** - AI agent configurations with custom prompts and settings
-- **KnowledgeSource/Document** - Content sources and processed documents
-- **Conversation** - Chat history and analytics
-- **CrawlRequest/CrawledPage** - Web crawling operations and results
-- **ModelConfiguration** - Multi-provider AI model settings
+Note: AI provider API keys (OpenAI, Anthropic, etc.) are configured per user through the web interface, not as global environment variables.
 
-### Key Features
+## Testing Strategy
 
-- **OpenAI Integration**: GPT-3.5 and GPT-4 models with custom knowledge training
-- **Advanced Web Crawling**: Configurable crawler with content extraction and filtering
-- **Knowledge Base Training**: Automatic content processing with semantic search
-- **Real-time Chat Interface**: ChatGPT-style playground for testing agents
-- **Production Deployment**: Docker setup with health checks and monitoring
+- **Unit Tests**: Located in `__tests__/` directory
+- **Component Tests**: React components with Testing Library
+- **API Tests**: API route testing
+- **Coverage Target**: 70% minimum across all metrics
+- **Test Environment**: jsdom for DOM simulation
 
-## Development Guidelines
+## Database Migration Workflow
 
-### Environment Setup
-1. Copy `environment.example` to `.env.local`
-2. Configure required API keys (at minimum OpenAI)
-3. Set up PostgreSQL database
-4. Run `npm run setup:complete` for automated setup
+1. **Schema Changes**: Modify `prisma/schema.prisma`
+2. **Generate Migration**: `npm run db:migrate`
+3. **Apply Changes**: Automatically applied in development
+4. **Production**: Use `npm run db:deploy`
 
-### Database Development
-- Always run `npm run db:generate` after schema changes
-- Use `npm run db:push` for development, `npm run db:migrate` for production
-- The Prisma client is generated to `src/generated/prisma/`
+## Key Development Patterns
 
-### Testing
-- Tests are located in `__tests__/` directory
-- Use Jest with jsdom environment for component testing
-- Coverage threshold is set to 70% for all metrics
-- Run `npm run test:coverage` before submitting changes
+### API Routes Structure
+- Authentication required for most routes
+- Rate limiting implemented
+- Input validation with Zod schemas
+- Error handling with proper HTTP status codes
 
-### AI Provider Integration
-- AI configurations are stored per-user in the database (encrypted)
-- Default to environment variables as fallback for API keys
-- Support multiple models per provider with configurable parameters
+### Component Architecture
+- Reusable UI components in `src/components/ui/`
+- Feature-specific components organized by domain
+- TypeScript interfaces for all props
+- Tailwind CSS for styling
 
-### Agent Development
-- Agents use knowledge-based context building with advanced document scoring
-- Support for structured content extraction (tables, lists, headings)
-- Multi-layered relevance scoring for improved context selection
+### Security Practices
+- API keys encrypted before database storage
+- Rate limiting on authentication and API endpoints
+- Input validation on all user inputs
+- CORS and security headers configured
+
+## Production Deployment
+
+### Docker Deployment (Recommended)
+```bash
+cd docker
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Health Checks
+- Endpoint: `/api/health`
+- Database connectivity verification
+- Health check script: `docker/healthcheck.js`
+
+### Scripts
+- `scripts/deploy.sh`: Automated deployment
+- `scripts/backup.sh`: Database backup
+- `scripts/monitor.sh`: System monitoring
+- `scripts/test.sh`: Comprehensive testing
 
 ## Common Development Tasks
 
-### Adding New AI Providers (Future Enhancement)
-1. Update `ModelConfiguration` schema in `prisma/schema.prisma`
-2. Add provider logic in `UniversalSupportAgent.ts`
-3. Update settings UI in `src/components/sidebar-pages/ModelIntegrations.tsx`
-4. Note: Currently only OpenAI is fully implemented
+### Adding New AI Provider
+1. Add configuration to User model in `prisma/schema.prisma`
+2. Update `ModelConfiguration` handling
+3. Add provider-specific logic to agent implementation
+4. Update settings UI components
 
-### Extending Knowledge Processing
-1. Modify crawler settings in `CrawlerConfiguration` model
-2. Update content extraction in `WebsiteCrawler.ts`
-3. Enhance document scoring in `UniversalSupportAgent.ts`
+### Implementing New Agent Tool
+1. Create tool class in `src/lib/tools/`
+2. Implement LangChain tool interface
+3. Add tool to agent configuration
+4. Update tool registration in agent setup
 
-### Adding Agent Tools
-1. Create new tool in `src/lib/tools/`
-2. Follow existing tool patterns for integration
-3. Update agent configuration to include new tools
+### Adding New Knowledge Source Type
+1. Extend `KnowledgeSource` model if needed
+2. Update knowledge processor for new type
+3. Add UI components for configuration
+4. Implement specific processing logic
 
-## Deployment
+## Performance Considerations
 
-### Production Environment
-- Use `npm run build:production` for optimized builds
-- Set `NODE_ENV=production` for production deployment
-- Configure PostgreSQL and Redis for production use
+- **Database**: Connection pooling configured for production
+- **Caching**: Consider Redis for session storage in production
+- **Embeddings**: Chunking strategy optimized for retrieval
+- **Rate Limiting**: Configured per user and endpoint
+- **Bundle Size**: Tree shaking and code splitting enabled
 
-### Docker Deployment
-- Use `docker-compose.prod.yml` for production
-- Health checks available at `/api/health`
-- Comprehensive monitoring and backup scripts in `scripts/`
+## Debugging and Monitoring
 
-### Environment Variables
-- `DATABASE_URL` - PostgreSQL connection string
-- `NEXTAUTH_SECRET` - Authentication secret
-- `OPENAI_API_KEY` - OpenAI API key (required)
-- `ENCRYPTION_KEY` - Key encryption secret
+- **Logs**: Structured logging with configurable levels
+- **Processing Logs**: Detailed crawling and knowledge processing logs in database
+- **Health Monitoring**: `/api/health` endpoint with database checks
+- **Error Tracking**: Console errors and processing failures logged
 
-## Project Structure Notes
+## Important File Locations
 
-- TypeScript path mapping: `@/*` maps to `src/*`
-- Prisma client output: `src/generated/prisma/`
-- Next.js standalone output for Docker deployment
-- Comprehensive documentation in `docs/` directory
-- Production deployment scripts in `scripts/` directory
-
-## Docker Optimization Notes
-- Consider multi-stage builds to reduce image size
-- Use `.dockerignore` to exclude unnecessary files
-- Optimize layer caching by ordering Dockerfile commands
-- Minimize the number of layers in Docker images
+- **Environment Config**: `environment.example`, `environment.production.example`
+- **Database Schema**: `prisma/schema.prisma`
+- **Next.js Config**: `next.config.ts`
+- **TypeScript Config**: `tsconfig.json`
+- **Jest Config**: `jest.config.js`
+- **Docker Config**: `docker/docker-compose.*.yml`
+- **Production Checklist**: `docs/PRODUCTION_CHECKLIST.md`

@@ -134,7 +134,7 @@ check_environment_setup() {
     fi
     
     # Check required environment variables in example
-    local required_vars=("DATABASE_URL" "NEXTAUTH_SECRET" "NEXTAUTH_URL" "OPENAI_API_KEY")
+    local required_vars=("DATABASE_URL" "NEXTAUTH_SECRET" "NEXTAUTH_URL")
     for var in "${required_vars[@]}"; do
         if grep -q "^$var=" environment.example 2>/dev/null; then
             log_success "environment.example has $var"

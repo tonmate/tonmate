@@ -10,7 +10,7 @@ This guide provides comprehensive instructions for deploying the Tonmate platfor
 - **Database**: PostgreSQL 14+ (required)
 - **Redis**: For caching and session storage (optional but recommended)
 - **Domain**: SSL certificate for HTTPS
-- **AI API Keys**: OpenAI, Anthropic, or Cohere
+- **AI API Keys**: Configured per user in the web interface (OpenAI, Anthropic, Google AI, Mistral, Cohere)
 
 ## Quick Start
 
@@ -68,9 +68,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
 #### AI Providers
 ```env
-OPENAI_API_KEY=sk-your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key
-COHERE_API_KEY=your-cohere-key
+# AI provider API keys are configured per user through the web interface
+# No global API key configuration required in environment variables
 ```
 
 #### Security
@@ -151,7 +150,7 @@ Create `vercel.json`:
   "env": {
     "NEXTAUTH_SECRET": "@nextauth-secret",
     "DATABASE_URL": "@database-url",
-    "OPENAI_API_KEY": "@openai-api-key"
+    "ENCRYPTION_KEY": "@encryption-key"
   }
 }
 ```

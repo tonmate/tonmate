@@ -98,7 +98,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## ✨ Features
 
 ### 🤖 **AI Agent Management**
-- **OpenAI Integration**: Powered by GPT-3.5 and GPT-4 models
+- **Multi-AI Integration**: Powered by OpenAI, Anthropic, Google AI, Mistral, and Cohere
 - **Custom Agent Creation**: Create agents with unique personalities and prompts
 - **Knowledge Base Training**: Automatic website content processing and embedding
 - **Real-time Chat Interface**: ChatGPT-style playground for testing
@@ -146,7 +146,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Prisma ORM**: Type-safe database operations with migrations
 - **NextAuth.js**: Authentication and session management
 - **LangChain.js**: AI orchestration and prompt engineering
-- **OpenAI Integration**: GPT models for AI responses
+- **Multi-AI Integration**: Support for multiple AI providers with per-user configuration
 - **Input Validation**: Comprehensive Zod schema validation
 
 ### Database & Infrastructure
@@ -163,7 +163,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - npm or yarn package manager
 - PostgreSQL 13+
 - Docker (for containerized deployment)
-- OpenAI API key
+- AI provider API keys (configured per user in the UI)
 
 ### Development Setup
 
@@ -233,8 +233,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/db_name
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key
 
-# AI Provider
-OPENAI_API_KEY=your-openai-api-key
+# AI Provider API keys are configured per user through the web interface
+# No global API key configuration required
 
 # Security
 ENCRYPTION_KEY=your-encryption-key
@@ -265,11 +265,12 @@ EMAIL_PASS=your-email-password
 
 ### AI Provider Configuration
 
-Configure OpenAI integration through the Settings page:
+Configure AI providers through the Settings page:
 
-- **OpenAI**: GPT-3.5 Turbo, GPT-4, GPT-4 Turbo
-- Custom temperature, max tokens, and model selection
-- Secure API key storage with encryption
+- **Multiple Providers**: OpenAI, Anthropic, Google AI, Mistral AI, Cohere
+- **Per-User Configuration**: Each user configures their own API keys
+- **Custom Settings**: Temperature, max tokens, and model selection
+- **Secure Storage**: API keys are encrypted before database storage
 
 ### Crawler Configuration
 
@@ -379,7 +380,7 @@ docker-compose logs -f postgres redis nginx
 ### Dashboard Features
 
 1. **Dashboard**: Main analytics hub with aggregated usage statistics
-2. **AI Model Integrations** (`/integrations`): Configure OpenAI, Anthropic, Google AI, Mistral AI, Cohere
+2. **AI Model Integrations** (`/integrations`): Configure your AI provider API keys (OpenAI, Anthropic, Google AI, Mistral AI, Cohere)
 3. **Crawler Settings** (`/crawler-settings`): Customize web crawling behavior
 4. **Agent Management**: Create and configure AI agents with specific personalities
 5. **Agent Playground**: Full-screen ChatGPT-style testing interface
@@ -440,9 +441,9 @@ GET  /api/knowledge-sources/[id]/status   # Processing status
 
 #### AI Model Configuration
 ```bash
-# OpenAI model configuration
-GET  /api/models/configure      # Get user's AI model configs
-POST /api/models/configure      # Save AI model configuration
+# AI provider configuration (per user)
+GET  /api/models/configure      # Get user's AI provider configs
+POST /api/models/configure      # Save AI provider configuration
 POST /api/models/disconnect     # Disconnect AI provider
 ```
 

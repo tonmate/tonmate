@@ -50,7 +50,7 @@ export function withCorsHeaders(response: NextResponse): NextResponse {
 // Authentication middleware
 export async function withAuth(
   request: NextRequest,
-  handler: (request: NextRequest, session: any) => Promise<NextResponse>
+  handler: (request: NextRequest, session: any) => Promise<NextResponse> 
 ): Promise<NextResponse> {
   try {
     const session = await getServerSession(authOptions);

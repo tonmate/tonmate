@@ -30,7 +30,9 @@ Navigate to your GitHub repository → Settings → Secrets and variables → Ac
 
 | Secret Name | Description | Example Value |
 |-------------|-------------|---------------|
-| `OPENAI_API_KEY` | OpenAI API key | `sk-...` |
+| `ENCRYPTION_KEY` | Data encryption key | Generate with `openssl rand -base64 32` |
+
+**Note**: AI provider API keys (OpenAI, Anthropic, etc.) are configured per user through the web interface, not as GitHub secrets.
 
 ### VPS Deployment Secrets
 
@@ -73,7 +75,7 @@ For deploying to your VPS server, you'll need these additional secrets:
 ### For Production Deployment:
 - Use production database credentials
 - Use secure, randomly generated secrets
-- Use real API keys
+- Configure AI provider keys through the web interface per user
 
 ## Generating Secure Secrets
 
