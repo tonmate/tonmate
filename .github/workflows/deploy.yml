@@ -21,6 +21,9 @@ on:
       NEXTAUTH_URL:
         required: true
         type: string
+      NEXT_PUBLIC_APP_URL:
+        required: true
+        type: string
     secrets:
       SSH_PRIVATE_KEY:
         required: true
