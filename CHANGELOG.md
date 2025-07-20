@@ -1,3 +1,18 @@
+## [1.0.10](https://github.com/tonmate/tonmate/compare/v1.0.9...v1.0.10) (2025-07-20)
+
+### Code Refactoring
+
+* move environment variables from secrets to inputs in CI/CD workflow ([8117b23](https://github.com/tonmate/tonmate/commit/8117b23c482cdd82b7ffced01f5119af54ee0a33))
+
+### CI
+
+* add NEXT_PUBLIC_APP_URL environment variable to build steps ([e4af74b](https://github.com/tonmate/tonmate/commit/e4af74b546083a77fb8f54fcb5f45414c07b7f04))
+* add NEXT_PUBLIC_APP_URL environment variable to test workflow ([080753a](https://github.com/tonmate/tonmate/commit/080753ae5b318ebea40315c391dbff04fb8bcd3a))
+* add NEXT_PUBLIC_APP_URL to required deployment variables ([899d169](https://github.com/tonmate/tonmate/commit/899d16944a928fdee4df94250ffe1cfcec5d2ee1))
+* add NEXTAUTH_URL environment variable to test workflow ([be372fd](https://github.com/tonmate/tonmate/commit/be372fdb7badbba1838982a0b41415237ac566cf))
+* move NEXTAUTH_URL from secrets to inputs in deploy workflow ([cd2473d](https://github.com/tonmate/tonmate/commit/cd2473ddd033ef422a68679424ab6c5bb8890916))
+* update env file configuration to use GitHub secrets and vars ([ee440f4](https://github.com/tonmate/tonmate/commit/ee440f4d278065cd8738a5a5654074a41a3aacaf))
+
 ## [1.0.9](https://github.com/tonmate/tonmate/compare/v1.0.8...v1.0.9) (2025-07-20)
 
 ### Bug Fixes
