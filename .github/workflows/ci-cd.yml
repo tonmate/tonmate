@@ -51,6 +51,7 @@ jobs:
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
 
   build:
     name: Build and Push Image
@@ -88,6 +89,7 @@ jobs:
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
       NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   migrations:
