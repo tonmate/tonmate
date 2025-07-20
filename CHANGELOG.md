@@ -1,3 +1,9 @@
+## [1.0.9](https://github.com/tonmate/tonmate/compare/v1.0.8...v1.0.9) (2025-07-20)
+
+### Bug Fixes
+
+* update Docker and deployment configs with healthcheck, project naming and legacy deps ([edd8a11](https://github.com/tonmate/tonmate/commit/edd8a117194b7cfc0b4c1e5782f0f2b066d0d08e))
+
 ## [1.0.8](https://github.com/tonmate/tonmate/compare/v1.0.7...v1.0.8) (2025-07-20)
 
 ### Documentation
