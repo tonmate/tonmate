@@ -1,3 +1,14 @@
+## [1.0.8](https://github.com/tonmate/tonmate/compare/v1.0.7...v1.0.8) (2025-07-20)
+
+### Documentation
+
+* add Calude.md ([a1c3a76](https://github.com/tonmate/tonmate/commit/a1c3a76264ae1b8c17c8e207cce3e9c01cadf10b))
+
+### Code Refactoring
+
+* remove global AI API keys in favor of per-user provider configuration ([5aa38ae](https://github.com/tonmate/tonmate/commit/5aa38aee7ce1f4305b2c1f176daaa13e4decc0bd))
+* remove hardcoded OpenAI API key in favor of per-user configuration ([d803aab](https://github.com/tonmate/tonmate/commit/d803aabbb625ebc0f9dbe0282114928e92c52111))
+
 ## [1.0.7](https://github.com/tonmate/tonmate/compare/v1.0.6...v1.0.7) (2025-07-20)
 
 ### Code Refactoring
