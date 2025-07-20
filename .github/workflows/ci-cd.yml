@@ -46,12 +46,13 @@ jobs:
     name: Run Tests
     if: github.event.inputs.action != 'deploy-only' && github.event.inputs.action != 'migrations-only'
     uses: ./.github/workflows/test.yml
+    with:
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
     secrets:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
 
   build:
     name: Build and Push Image
@@ -80,6 +81,9 @@ jobs:
     with:
       environment: ${{ github.event.inputs.environment || 'production' }}
       image-name: ${{ github.repository }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
+
     secrets:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_USER: ${{ secrets.SSH_USER }}
@@ -88,8 +92,6 @@ jobs:
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   migrations:

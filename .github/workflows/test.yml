@@ -7,6 +7,12 @@ on:
         required: false
         type: string
         default: "20.x"
+      NEXT_PUBLIC_APP_URL:
+        required: true
+        type: string
+      NEXTAUTH_URL:
+        required: true
+        type: string
     secrets:
       DATABASE_URL:
         required: true
@@ -15,8 +21,6 @@ on:
       JWT_SECRET:
         required: true
       ENCRYPTION_KEY:
-        required: true
-      NEXT_PUBLIC_APP_URL:
         required: true
     outputs:
       test_success:
@@ -35,7 +39,6 @@ jobs:
       NEXTAUTH_URL: ${{ vars.NEXTAUTH_URL }}
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
       ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -55,8 +58,9 @@ jobs:
           echo "NEXTAUTH_SECRET=$NEXTAUTH_SECRET" >> .env.local
           echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
           echo "JWT_SECRET=$JWT_SECRET" >> .env.local
-          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
           echo "NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL" >> .env.local
+          echo "NEXTAUTH_URL=$NEXTAUTH_URL" >> .env.local
+          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env.local
 
       - name: Generate Prisma client
         run: npm run db:generate
