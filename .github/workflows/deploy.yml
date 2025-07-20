@@ -18,6 +18,9 @@ on:
         required: false
         type: string
         default: "ghcr.io"
+      NEXTAUTH_URL:
+        required: true
+        type: string
     secrets:
       SSH_PRIVATE_KEY:
         required: true
@@ -32,8 +35,6 @@ on:
       JWT_SECRET:
         required: true
       ENCRYPTION_KEY:
-        required: true
-      NEXTAUTH_URL:
         required: true
       GH_TOKEN:
         required: true
