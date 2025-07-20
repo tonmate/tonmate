@@ -41,8 +41,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    #ports different from default limit 5435
     ports:
-      - "5432:5432"
+      - "6543:5432"
     networks:
       - app-network
     restart: unless-stopped

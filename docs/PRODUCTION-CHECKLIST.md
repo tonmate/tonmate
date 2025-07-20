@@ -169,12 +169,11 @@ NEXTAUTH_URL=https://your-domain.com
 # Database
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
-# AI Provider
-OPENAI_API_KEY=sk-your-openai-key
-
 # Security
 ENCRYPTION_KEY=your-encryption-key
 JWT_SECRET=your-jwt-secret
+
+# Note: AI provider API keys are configured per user through the web interface
 ```
 
 ### Optional but Recommended

@@ -59,8 +59,8 @@ export class UniversalSupportAgent {
     }
     this.knowledgeBase = knowledgeBase;
     
-    // Initialize OpenAI client with user-specific API key or fallback to env
-    const apiKey = this.config.apiKey || process.env.OPENAI_API_KEY;
+    // Initialize OpenAI client with user-specific API key
+    const apiKey = this.config.apiKey;
     if (apiKey) {
       this.openai = new OpenAI({ apiKey });
     }
@@ -73,9 +73,9 @@ export class UniversalSupportAgent {
     try {
       if (!this.openai) {
         return {
-          response: "I'm sorry, but I'm not properly configured. Please ensure the OpenAI API key is set.",
+          response: "I'm sorry, but I'm not properly configured. Please set your OpenAI API key in the agent settings to enable AI responses.",
           confidence: 0,
-          error: "OpenAI not configured"
+          error: "No API key configured - OpenAI client not initialized"
         };
       }
 

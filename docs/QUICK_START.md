@@ -6,7 +6,7 @@ Get your Tonmate platform up and running in under 10 minutes!
 
 - Node.js 18+ installed
 - PostgreSQL database (local or cloud)
-- OpenAI API key (or other AI provider key)
+- AI provider API keys (configured per user through the web interface)
 
 ## 1. Clone and Setup
 
@@ -34,10 +34,8 @@ DATABASE_URL="postgresql://user:password@localhost:5432/support_db"
 NEXTAUTH_SECRET="your-secret-key-here"
 NEXTAUTH_URL="http://localhost:3000"
 
-# AI Provider (choose one)
-OPENAI_API_KEY="your-openai-api-key"
-# OR
-ANTHROPIC_API_KEY="your-anthropic-api-key"
+# AI Provider API keys are configured per user through the web interface
+# No global API key configuration required
 
 # Encryption
 ENCRYPTION_KEY="your-32-character-encryption-key"
@@ -156,8 +154,8 @@ npm run build
 
 ### API Key Issues
 ```bash
-# Verify your API key is valid
-curl -H "Authorization: Bearer your-api-key" https://api.openai.com/v1/models
+# Configure API keys through the web interface after login
+# Go to Settings > AI Provider Integrations
 ```
 
 ## Support

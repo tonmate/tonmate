@@ -15,17 +15,10 @@ DATABASE_URL="postgresql://username:password@localhost:5432/tonmate"
 # Development (SQLite - deprecated, not recommended)
 # DATABASE_URL="file:./dev.db"
 
-# AI/LLM Configuration (REQUIRED for AI features)
-OPENAI_API_KEY=your_openai_api_key_here
-
-# Optional: Future AI providers (not yet implemented)
-# ANTHROPIC_API_KEY=your_anthropic_api_key_here
-# COHERE_API_KEY=your_cohere_api_key_here
 
 # Application Configuration
 NODE_ENV=development
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_APP_NAME="Tonmate"
 
 # Logging Configuration
 LOG_LEVEL=info
@@ -36,75 +29,21 @@ ENCRYPTION_KEY=your_32_character_encryption_key_here
 
 # Rate Limiting Configuration
 RATE_LIMIT_ENABLED=true
-RATE_LIMIT_MAX_REQUESTS=100
-RATE_LIMIT_WINDOW_MS=900000
 
 # File Upload & Crawling Configuration
 MAX_FILE_SIZE=10485760
 MAX_CRAWL_DEPTH=5
 
-# Health Check Configuration
-HEALTH_ENDPOINT=/api/health
-HEALTH_TIMEOUT=30000
-HEALTH_RETRIES=3
-HEALTH_RETRY_DELAY=1000
-HEALTH_CHECK_DATABASE=true
+# Shop Information (Optional - for demo/shop tools)
+# SHOP_NAME="Demo Fashion Store"
+# SHOP_DESCRIPTION="Trendy fashion items for all ages"
+# SHOP_CONTACT_EMAIL="support@demofashion.com"
+# SHOP_CONTACT_PHONE="+1234567890"
+# SHOP_POLICIES="30-day return policy, free shipping over $50"
 
-# Email Configuration (Optional - for notifications)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
-# SMTP_USER=your_email@gmail.com
-# SMTP_PASSWORD=your_app_password
-# FROM_EMAIL=noreply@yourdomain.com
-
-# Knowledge Processing Configuration
-MAX_PAGES_PER_SITE=100
-CRAWL_DELAY_MS=1000
-
-# Monitoring & Analytics (Optional)
-# SENTRY_DSN=your_sentry_dsn_here
-# GOOGLE_ANALYTICS_ID=your_ga_id_here
-
-# Feature Flags
-FEATURE_SIGNUP_ENABLED=true
-FEATURE_GUEST_MODE=false
-FEATURE_ANALYTICS=true
-FEATURE_EMAIL_NOTIFICATIONS=false
-
-# Development Only
-DEBUG_MODE=false
-SKIP_AUTH_CHECK=false
-
-# Production Optimization
-NEXT_BUNDLE_ANALYZER=false
-NEXT_COMPRESS=true
-NEXT_CACHE_TTL=3600
-
-# ===========================================
-# DEPLOYMENT SPECIFIC CONFIGURATIONS
-# ===========================================
-
-# For Vercel Deployment
-# VERCEL_URL will be automatically set by Vercel
-# Update NEXTAUTH_URL to your domain in production
-
-# For Docker Deployment
-# DOCKER_ENV=production
-# CONTAINER_PORT=3000
-
-# For AWS/Cloud Deployment
-# AWS_REGION=us-east-1
-# AWS_ACCESS_KEY_ID=your_aws_access_key
-# AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-
-# Database Connection Pool (Production)
-# DATABASE_POOL_SIZE=10
-# DATABASE_POOL_TIMEOUT=30000
-# DATABASE_POOL_IDLE_TIMEOUT=600000
-
-# Redis Configuration (Docker setup only - not used by application)
-# REDIS_URL=redis://localhost:6379
-# REDIS_PASSWORD=your_redis_password
+# Instagram Webhook Configuration (Optional)
+# WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token
+# INSTAGRAM_ACCESS_TOKEN=your_instagram_access_token
 
 # ===========================================
 # SECURITY NOTES
