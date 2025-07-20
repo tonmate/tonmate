@@ -1,3 +1,9 @@
+## [1.0.7](https://github.com/tonmate/tonmate/compare/v1.0.6...v1.0.7) (2025-07-20)
+
+### Code Refactoring
+
+* **2:** optimize Docker setup with multi-stage builds and system Chromium ([a8caa15](https://github.com/tonmate/tonmate/commit/a8caa15168d71d612b884c972ee494c714eb605a))
+
 ## [1.0.6](https://github.com/tonmate/tonmate/compare/v1.0.5...v1.0.6) (2025-07-19)
 
 ### CI
