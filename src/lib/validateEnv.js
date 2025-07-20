@@ -17,7 +17,6 @@ const requiredEnvVars = [
 
 // Define optional but recommended environment variables
 const recommendedEnvVars = [
-  'OPENAI_API_KEY',
   'ENCRYPTION_KEY',
   'JWT_SECRET',
   'LOG_LEVEL',
@@ -25,7 +24,6 @@ const recommendedEnvVars = [
 
 // Define production-only required variables
 const productionRequiredVars = [
-  'OPENAI_API_KEY',
   'ENCRYPTION_KEY',
   'JWT_SECRET',
 ];
@@ -100,9 +98,8 @@ function validateEnvironment() {
     }
   }
 
-  if (process.env.OPENAI_API_KEY && !process.env.OPENAI_API_KEY.startsWith('sk-')) {
-    errors.push('OPENAI_API_KEY appears to be invalid (should start with sk-)');
-  }
+  // AI provider API keys are configured per user through the web interface
+  // No global OPENAI_API_KEY validation needed
 
   // Validate numeric values
   if (process.env.MAX_FILE_SIZE && isNaN(Number(process.env.MAX_FILE_SIZE))) {

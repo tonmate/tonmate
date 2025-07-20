@@ -147,7 +147,7 @@ instagram-support-agent-nextjs/
 
 ### **Environment Variables**
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+# AI provider API keys are configured per user through the web interface
 SHOP_NAME=Demo Fashion Store
 SHOP_DESCRIPTION=Your favorite online fashion destination
 SHOP_POLICIES=30-day return policy. Free shipping on orders over $50.
@@ -193,7 +193,7 @@ SHOP_CONTACT_PHONE=+1-555-FASHION
 ## 🚀 Next Steps
 
 1. **Deploy to Vercel**: Ready for production deployment
-2. **Add OpenAI API Key**: Enable full AI functionality
+2. **Configure AI Providers**: Users configure their own API keys through the web interface
 3. **Instagram Integration**: Connect to Instagram Business API
 4. **Custom Branding**: Customize for specific shop needs
 5. **Analytics**: Add usage tracking and analytics

@@ -106,9 +106,10 @@ The platform uses a sophisticated AI agent architecture:
 Copy `environment.example` to `.env.local` for development. Key variables:
 - `DATABASE_URL`: PostgreSQL connection string
 - `NEXTAUTH_SECRET`: 32+ character secret for authentication
-- `OPENAI_API_KEY`: Required for AI features
 - `ENCRYPTION_KEY`: For encrypting user API keys
 - `NEXTAUTH_URL`: Application URL
+
+Note: AI provider API keys (OpenAI, Anthropic, etc.) are configured per user through the web interface, not as global environment variables.
 
 ## Testing Strategy
 

@@ -32,9 +32,10 @@ Create a `.env` file in the project root with required variables:
 
 ```bash
 NEXTAUTH_SECRET=your-secret-key
-OPENAI_API_KEY=your-openai-key
 ENCRYPTION_KEY=your-encryption-key
 ```
+
+Note: AI provider API keys (OpenAI, Anthropic, etc.) are configured per user through the web interface.
 
 ## Documentation
 

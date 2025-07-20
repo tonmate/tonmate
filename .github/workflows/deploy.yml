@@ -33,8 +33,6 @@ on:
         required: true
       ENCRYPTION_KEY:
         required: true
-      OPENAI_API_KEY:
-        required: true
       NEXTAUTH_URL:
         required: true
       GH_TOKEN:
@@ -97,7 +95,6 @@ jobs:
             echo 'NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}' >> .env
             echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
             echo 'ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}' >> .env
-            echo 'OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}' >> .env
             echo 'NODE_ENV=production' >> .env
 
 

@@ -60,7 +60,7 @@ export class UniversalSupportAgent {
     this.knowledgeBase = knowledgeBase;
     
     // Initialize OpenAI client with user-specific API key or fallback to env
-    const apiKey = this.config.apiKey || process.env.OPENAI_API_KEY;
+    const apiKey = this.config.apiKey 
     if (apiKey) {
       this.openai = new OpenAI({ apiKey });
     }

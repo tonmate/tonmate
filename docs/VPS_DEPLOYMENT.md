@@ -31,9 +31,10 @@ Navigate to your repository → **Settings** → **Secrets and variables** → *
 |-------------|-------------|
 | `DATABASE_URL` | Production database URL |
 | `NEXTAUTH_SECRET` | NextAuth secret |
-| `OPENAI_API_KEY` | OpenAI API key |
 | `JWT_SECRET` | JWT secret |
-| `ENCRYPTION_KEY` | Encryption key |
+| `ENCRYPTION_KEY` | Data encryption key |
+
+**Note**: AI provider API keys (OpenAI, Anthropic, etc.) are configured per user through the web interface.
 
 ### 2. GitHub Variables
 
