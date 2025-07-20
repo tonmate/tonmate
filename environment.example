@@ -18,7 +18,7 @@ DATABASE_URL="postgresql://username:password@localhost:5432/tonmate"
 # AI/LLM Configuration (REQUIRED for AI features)
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Optional: Alternative AI providers
+# Optional: Future AI providers (not yet implemented)
 # ANTHROPIC_API_KEY=your_anthropic_api_key_here
 # COHERE_API_KEY=your_cohere_api_key_here
 
@@ -102,7 +102,7 @@ NEXT_CACHE_TTL=3600
 # DATABASE_POOL_TIMEOUT=30000
 # DATABASE_POOL_IDLE_TIMEOUT=600000
 
-# Redis Configuration (Optional - for caching)
+# Redis Configuration (Docker setup only - not used by application)
 # REDIS_URL=redis://localhost:6379
 # REDIS_PASSWORD=your_redis_password
 

@@ -1,6 +1,6 @@
 # API Reference
 
-The Universal AI Customer Support Platform provides a comprehensive RESTful API for integration with external systems.
+Tonmate provides a RESTful API for managing AI agents, knowledge sources, and conversations.
 
 ## Base URL
 ```

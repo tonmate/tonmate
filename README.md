@@ -9,24 +9,23 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Redis](https://img.shields.io/badge/Redis-DC382D?logo=redis&logoColor=white)](https://redis.io/)
 [![GitHub stars](https://img.shields.io/github/stars/aryasadeghy/tonmate?style=social)](https://github.com/aryasadeghy/tonmate/stargazers)
 
 </div>
 
-> **🚀 AI-Powered Customer Support Platform - Deploy intelligent support agents trained on your content in minutes**
+> **🚀 AI-Powered Customer Support Platform - Create intelligent support agents trained on your website content**
 
-Tonmate is a comprehensive, enterprise-grade open source platform that enables businesses to create, deploy, and manage intelligent support agents trained on their specific content. Features advanced web crawling, multi-AI provider integrations, real-time analytics, Docker deployment, and production-ready architecture.
+Tonmate is an open source platform that enables businesses to create and deploy AI support agents trained on their specific content. Features advanced web crawling, OpenAI integration, real-time chat interface, and Docker deployment.
 
 ## ✨ Why Choose Tonmate?
 
-- **🎯 Zero Configuration**: Start with sane defaults, customize as needed
-- **🔧 Production Ready**: Docker, health checks, monitoring, and deployment scripts included
+- **🎯 Easy Setup**: Start with sane defaults, customize as needed
+- **🔧 Production Ready**: Docker deployment with health checks and monitoring scripts
 - **🌐 Universal**: Works with any website structure or content organization
-- **🔒 Enterprise Security**: Authentication, rate limiting, input validation, and encryption
-- **📊 Comprehensive Analytics**: Usage tracking, performance metrics, and insights
-- **🚀 Multi-Provider AI**: OpenAI, Anthropic, Google AI, Mistral AI, and Cohere support
-- **🎨 Modern UI**: Beautiful, responsive interface with ChatGPT-style interactions
+- **🔒 Secure**: Authentication, input validation, and API key encryption
+- **📊 Analytics**: Usage tracking and conversation history
+- **🚀 OpenAI Integration**: Powered by GPT models with custom knowledge training
+- **🎨 Modern UI**: Beautiful, responsive interface with ChatGPT-style playground
 - **📚 Open Source**: MIT licensed, community-driven development
 
 ## 🚀 Quick Start
@@ -99,12 +98,12 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## ✨ Features
 
 ### 🤖 **AI Agent Management**
-- **Multi-Provider AI Integration**: OpenAI, Anthropic, Google AI, Mistral AI, Cohere
-- **Custom Agent Creation**: Unlimited agents with unique personalities
-- **Knowledge Base Training**: Automatic website content processing
-- **Real-time Chat Interface**: ChatGPT-style playground
-- **Conversation History**: Complete analytics and insights
-- **Developer Tools**: API key management and embed code generation
+- **OpenAI Integration**: Powered by GPT-3.5 and GPT-4 models
+- **Custom Agent Creation**: Create agents with unique personalities and prompts
+- **Knowledge Base Training**: Automatic website content processing and embedding
+- **Real-time Chat Interface**: ChatGPT-style playground for testing
+- **Conversation History**: Complete chat analytics and insights
+- **Developer Tools**: API key management and debugging capabilities
 
 ### 🕷️ Advanced Web Crawling
 - **Intelligent Website Crawling**: Domain-limited crawling with smart content extraction
@@ -114,36 +113,24 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Filter Management**: Include/exclude patterns, file type restrictions
 - **JavaScript Rendering**: Optional JS execution for dynamic content
 
-### 📊 Enhanced Analytics & Monitoring
-- **Aggregated Usage Analytics**: Period-based summaries instead of daily breakdowns
-- **Usage Trends**: 7, 30, 90-day analytics with averages and totals
-- **Token & Cost Tracking**: Detailed usage statistics and cost estimation
-- **Real-Time Status Updates**: Live processing indicators and progress tracking
-- **Performance Metrics**: Response times, success rates, and system health
+### 📊 Analytics & Monitoring
+- **Usage Analytics**: Track conversations, token usage, and agent performance
+- **Processing Status**: Live indicators for knowledge source processing
+- **Conversation History**: Complete chat logs and analytics
+- **Health Checks**: Basic system health monitoring
 
-### 🛡️ Enterprise Security
-- **Multi-Tenant Architecture**: Secure isolation between users and organizations
-- **Rate Limiting**: Configurable limits for API, authentication, and processing
+### 🛡️ Security
+- **User Authentication**: NextAuth.js with session management
+- **API Key Encryption**: Secure storage of user API keys
 - **Input Validation**: Comprehensive validation with Zod schemas
-- **Security Headers**: CORS, XSS protection, and content security policies
-- **Audit Logging**: Complete activity tracking and security monitoring
-
-### 📊 Monitoring & Analytics
-- **Health Checks**: Automated system health monitoring
-- **Performance Metrics**: Response time and resource usage tracking
-- **Error Tracking**: Comprehensive error logging and alerting
-- **Debug Tools**: Advanced debugging and troubleshooting capabilities
-- **Real-Time Dashboards**: Live system status and analytics
+- **Security Headers**: CORS and XSS protection
 
 ### 🚀 Production Ready
-- **Docker Deployment**: Multi-stage builds with security best practices
-- **Automated Scripts**: Setup, deployment, testing, and health check scripts
+- **Docker Deployment**: Multi-stage builds with PostgreSQL database
+- **Automated Scripts**: Setup, deployment, and health check scripts
 - **Database Migrations**: Versioned schema management with Prisma
-- **Backup Systems**: Automated backup and recovery scripts
 - **Environment Management**: Separate configurations for dev/staging/prod
-- **Health Monitoring**: Comprehensive health checks and monitoring
-- **SSL/TLS**: HTTPS enforcement and certificate management
-- **Performance Optimization**: Caching, compression, and CDN integration
+- **Health Monitoring**: Basic health checks and system status
 
 ## 🏗️ Architecture
 
@@ -155,21 +142,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - **Responsive Design**: Mobile-first approach with perfect UX
 
 ### Backend
-- **Next.js 15 API Routes**: Modern serverless API architecture with async params
-- **Prisma ORM**: Type-safe database operations with advanced migrations
-- **NextAuth.js**: Enterprise authentication and session management
-- **LangChain.js**: Advanced AI orchestration and prompt engineering
-- **Multi-AI Provider APIs**: Integrated OpenAI, Anthropic, Google AI, Mistral, Cohere
-- **Rate Limiting**: Redis-based rate limiting with configurable policies
+- **Next.js 15 API Routes**: Modern serverless API architecture
+- **Prisma ORM**: Type-safe database operations with migrations
+- **NextAuth.js**: Authentication and session management
+- **LangChain.js**: AI orchestration and prompt engineering
+- **OpenAI Integration**: GPT models for AI responses
 - **Input Validation**: Comprehensive Zod schema validation
 
 ### Database & Infrastructure
-- **PostgreSQL**: Production-ready database with full schema migrations
-- **Redis**: Caching and session storage for performance
-- **Vector Storage**: Efficient similarity search and embeddings with chunking
-- **Advanced Crawler**: Multi-threaded web crawling with content processing
+- **PostgreSQL**: Production-ready database with schema migrations
+- **Vector Embeddings**: Content chunking and similarity search for knowledge retrieval
+- **Web Crawler**: Multi-threaded crawling with Puppeteer for content processing
 - **Docker**: Production-ready containerization with multi-stage builds
-- **Nginx**: Reverse proxy with SSL termination and load balancing
 
 ## 🛠️ Installation
 
@@ -178,8 +162,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - Node.js 18.0.0 or higher
 - npm or yarn package manager
 - PostgreSQL 13+
-- Redis (for production)
 - Docker (for containerized deployment)
+- OpenAI API key
 
 ### Development Setup
 
@@ -249,13 +233,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/db_name
 NEXTAUTH_URL=http://localhost:3000
 NEXTAUTH_SECRET=your-secret-key
 
-# AI Providers
+# AI Provider
 OPENAI_API_KEY=your-openai-api-key
-ANTHROPIC_API_KEY=your-anthropic-api-key
-GOOGLE_AI_API_KEY=your-google-ai-api-key
-
-# Redis (Production)
-REDIS_URL=redis://localhost:6379
 
 # Security
 ENCRYPTION_KEY=your-encryption-key
@@ -286,13 +265,11 @@ EMAIL_PASS=your-email-password
 
 ### AI Provider Configuration
 
-Users can configure multiple AI providers through the Settings page:
+Configure OpenAI integration through the Settings page:
 
 - **OpenAI**: GPT-3.5 Turbo, GPT-4, GPT-4 Turbo
-- **Anthropic**: Claude 3 Haiku, Claude 3 Sonnet, Claude 3 Opus
-- **Google AI**: Gemini Pro, Gemini Pro Vision
-- **Mistral AI**: Mistral 7B, Mistral 8x7B, Mistral Large
-- **Cohere**: Command, Command Light, Command Nightly
+- Custom temperature, max tokens, and model selection
+- Secure API key storage with encryption
 
 ### Crawler Configuration
 
@@ -463,7 +440,7 @@ GET  /api/knowledge-sources/[id]/status   # Processing status
 
 #### AI Model Configuration
 ```bash
-# Multi-provider AI configuration
+# OpenAI model configuration
 GET  /api/models/configure      # Get user's AI model configs
 POST /api/models/configure      # Save AI model configuration
 POST /api/models/disconnect     # Disconnect AI provider
@@ -479,30 +456,10 @@ POST /api/crawler/config        # Save crawler configuration
 #### Analytics & Monitoring
 ```bash
 # Usage analytics
-GET /api/analytics/usage        # Usage statistics
-GET /api/usage                  # Usage trends
-GET /api/analytics/agents       # Agent-specific analytics
+GET /api/usage                  # Usage trends and statistics
 
 # System monitoring
-GET /api/health                 # Health check
-GET /api/metrics                # Performance metrics
-GET /api/status                 # Service status
-```
-
-### WebSocket APIs
-
-```bash
-# Real-time features
-ws://localhost:3000/api/ws/chat     # Real-time chat
-ws://localhost:3000/api/ws/status   # Live status updates
-```
-
-### Embed Widget API
-
-```bash
-# Widget integration
-GET /api/embed/config/[agentId]     # Widget configuration
-GET /api/embed/chat/[agentId]       # Widget chat endpoint
+GET /api/health                 # Health check endpoint
 ```
 
 ## 🤝 Contributing
